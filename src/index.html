@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file:; media-src 'self' blob: file:; font-src 'self' data:; connect-src 'self' blob: file:">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reelsmith</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="assets/icon-64.png">
+</head>
+<body>
+  <div id="app">
+    <header id="topbar">
+      <div class="brand"><span class="brand-mark"></span>Reelsmith</div>
+      <input id="proj-name" class="proj-name" spellcheck="false" title="Project name">
+      <div class="grow"></div>
+      <div id="topbar-actions" class="topbar-actions"></div>
+    </header>
+
+    <main id="workspace">
+      <section class="panel" data-tabs data-panels="source inspector" style="grid-area: 1 / 1">
+        <nav class="tabs">
+          <button class="tab on" data-tab="effectControls">Effect Controls</button>
+          <button class="tab" data-tab="scopes">Lumetri Scopes</button>
+          <button class="tab" data-tab="mixer">Audio Track Mixer</button>
+          <button class="tab" data-tab="source">Source</button>
+        </nav>
+        <div class="tab-body on" data-tab="effectControls"><div id="effect-controls" class="fill scroll"></div></div>
+        <div class="tab-body" data-tab="scopes"><div id="scopes" class="fill col"></div></div>
+        <div class="tab-body" data-tab="mixer"><div id="mixer" class="fill col"></div></div>
+        <div class="tab-body" data-tab="source"><div id="source" class="fill monitor"></div></div>
+      </section>
+      <div id="split-v1" class="splitter v" style="grid-area: 1 / 2"></div>
+      <section class="panel" data-panels="program" style="grid-area: 1 / 3">
+        <div id="program" class="fill monitor"></div>
+      </section>
+
+      <div id="split-h" class="splitter h" style="grid-area: 2 / 1 / 3 / 4"></div>
+
+      <section class="panel" data-tabs data-panels="project effects" style="grid-area: 3 / 1">
+        <nav class="tabs">
+          <button class="tab on" data-tab="project">Project</button>
+          <button class="tab" data-tab="effects">Effects</button>
+          <button class="tab" data-tab="captions">Captions</button>
+          <button class="tab" data-tab="library">Library</button>
+        </nav>
+        <div class="tab-body on" data-tab="project"><div id="project" class="fill col"></div></div>
+        <div class="tab-body" data-tab="effects"><div id="effects" class="fill col"></div></div>
+        <div class="tab-body" data-tab="captions"><div id="captions" class="fill col"></div></div>
+        <div class="tab-body" data-tab="library"><div id="library" class="fill scroll"></div></div>
+      </section>
+      <div id="split-v2" class="splitter v" style="grid-area: 3 / 2"></div>
+      <section class="panel" data-panels="timeline" style="grid-area: 3 / 3">
+        <div id="timeline" class="fill col"></div>
+      </section>
+    </main>
+
+    <footer id="statusbar">
+      <span id="status-msg"></span>
+      <span class="grow"></span>
+      <span id="status-info"></span>
+    </footer>
+  </div>
+
+  <script src="vendor/mediabunny.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/help-content.js"></script>
+  <script src="js/help.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/media.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/timeline.js"></script>
+  <script src="js/colorui.js"></script>
+  <script src="js/inspector.js"></script>
+  <script src="js/panels.js"></script>
+  <script src="js/program.js"></script>
+  <script src="js/decode.js"></script>
+  <script src="js/fastexport.js"></script>
+  <script src="js/scopes.js"></script>
+  <script src="js/tracking.js"></script>
+  <script src="js/audiotools.js"></script>
+  <script src="js/captions.js"></script>
+  <script src="js/proxies.js"></script>
+  <script src="js/autocaptions.js"></script>
+  <script src="js/bgremove.js"></script>
+  <script src="js/creative.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/exporter.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

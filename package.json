@@ -1,0 +1,33 @@
+{
+  "name": "reelsmith",
+  "productName": "Reelsmith",
+  "version": "1.0.0",
+  "description": "Reelsmith - a non-linear desktop video editor",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "docs": "node scripts/build-docs.js",
+    "icon": "electron scripts/build-icon.js"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^45.2.1"
+  },
+  "dependencies": {
+    "mediabunny": "1.61.6"
+  },
+  "build": {
+    "appId": "com.reelsmith.editor",
+    "productName": "Reelsmith",
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.video"
+    },
+    "win": {
+      "icon": "build/icon.png"
+    },
+    "linux": {
+      "icon": "build/icon.png"
+    }
+  }
+}

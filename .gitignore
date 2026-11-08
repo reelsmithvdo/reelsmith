@@ -1,0 +1,6 @@
+node_modules/
+*.tmp-*
+.DS_Store
+# Whisper is downloaded by users on demand, never shipped
+vendor/whisper/
+dist/
