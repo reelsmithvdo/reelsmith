@@ -188,7 +188,7 @@ The top bar has the project name, Undo/Redo, Sequence Settings, Help, Save and E
 
 ## Your first edit in 5 minutes
 
-1. **Import:** press `⌘I` (or drag files from Finder onto the Project panel).
+1. **Import:** press `⌘I` (or drag files from a folder on your computer _(Desktop app: Finder)_ onto the Project panel).
 2. **Add to the timeline:** drag a clip from the Project panel onto track **V1**. The sequence frame size automatically matches this first video (for example 9:16 for phone video).
 3. **Play:** press `Space`. Use `J` `K` `L` to shuttle back, stop and forward.
 4. **Cut out a part:** move the playhead to where the unwanted part starts, press `⌘K` to split, move to its end, press `⌘K` again, click the middle piece and press `⇧Delete` to remove it and close the gap.
@@ -228,7 +228,7 @@ Proxies are small copies of your video files used only for editing.
 1. Select video files in the Project panel ▸ right-click ▸ **Create Proxies** (or **Sequence ▸ Create Proxies for Selected Media**).
 2. When they are ready, **Proxies** in the Program monitor turns on. Click it to switch between proxies and originals.
 
-Proxies are saved in **Movies ▸ Reelsmith ▸ Proxies**. Exports always use the full-quality original files. Items with a proxy show **proxy ✓** in the Project panel.
+Proxies are available in the desktop app only. _(Desktop app: Proxies are saved in **Movies ▸ Reelsmith ▸ Proxies**.)_ Exports always use the full-quality original files. Items with a proxy show **proxy ✓** in the Project panel.
 
 ---
 
@@ -239,13 +239,13 @@ Proxies are saved in **Movies ▸ Reelsmith ▸ Proxies**. Exports always use th
 ### Ways to import
 - **File ▸ Import Media…** or `⌘I`.
 - The **Import** button in the Project panel.
-- Drag files from Finder onto the Project panel.
-- Drag files from Finder straight onto a timeline track: they are imported and placed where you drop them, one after another.
+- Drag files from a folder on your computer _(Desktop app: Finder)_ onto the Project panel.
+- Drag files from a folder _(Desktop app: Finder)_ straight onto a timeline track: they are imported and placed where you drop them, one after another.
 
 While importing, Reelsmith reads each file's duration and size, makes a thumbnail and analyses the audio waveform. Importing the same file twice reuses the existing item.
 
 ### Supported formats
-- **Video:** MP4, MOV, M4V, WebM, MKV, OGV with codecs macOS can decode (H.264, HEVC/H.265, VP8, VP9, AV1).
+- **Video:** MP4, MOV, M4V, WebM, MKV, OGV with codecs your browser _(Desktop app: macOS)_ can decode (H.264, HEVC/H.265, VP8, VP9, AV1).
 - **Audio:** MP3, WAV, M4A/AAC, OGG, FLAC, Opus.
 - **Images:** PNG, JPEG, GIF, WebP, BMP, SVG, AVIF.
 
@@ -267,7 +267,7 @@ The Project panel holds everything in your project: sequences first, then media.
 - Double-click media to open it in the [Source monitor](#the-source-monitor). Double-click a sequence to open it in the timeline.
 - Drag media or a sequence onto the timeline to use it.
 - **Used N×** shows how many times a file appears in the open sequence.
-- Right-click for Open in Source Monitor, Create Multi-Camera Source Sequence, Relink, Reveal in Finder and Delete.
+- Right-click for Open in Source Monitor, Create Multi-Camera Source Sequence, Relink_(Desktop app: Reveal in Finder)_ and Delete.
 - Deleting media that is used in the timeline asks for confirmation and removes those clips too.
 
 See also [Offline media and relinking](#offline-media-and-relinking).
@@ -669,7 +669,7 @@ Make the background of a logo or graphic transparent so it sits on top of your v
    - **Trim transparent edges:** crop the empty border around the logo.
 4. Click **Remove Background**.
 
-A new transparent PNG is saved to **Movies/Reelsmith/Cutouts** and added to the Project panel; the clip switches to it. The original file is not changed and stays in the Project panel. Press ⌘Z to go back.
+A new transparent PNG is created _(Desktop app: saved to **Movies/Reelsmith/Cutouts**)_ and added to the Project panel; the clip switches to it. The original file is not changed and stays in the Project panel. Press ⌘Z to go back.
 
 This works by colour, not AI, so it is best for logos and graphics on a plain background. For a person or object in a photo, use a [mask](#masks) instead. Images that already have transparency (PNG, WebP) keep it.
 
@@ -813,7 +813,7 @@ See also [Detaching audio from video](#detaching-audio-from-video) and [Audio tr
 Drag from **Effects ▸ Voice Effects** onto an audio clip: Chipmunk, Deep Voice, Monster, Robot, Telephone, Old Radio, Megaphone, Echo, Big Hall. One per clip. They play live and are included in exports.
 
 ### Sound effects
-**Effects ▸ Sound Effects** has 18 original sounds (Whoosh, Riser, Pop, Ding, Boing, Camera Shutter, Impact Boom, Laser Zap, Record Scratch, Tick Tock, Slide Whistles, Bubble Blips, Notification Chime, Wrong Buzzer, Ta-da!, Applause, Drum Roll + Crash). Double-click to add at the playhead on a free audio track, or drag onto the timeline. They are generated on your Mac and saved to **Movies/Reelsmith/Sound Effects**.
+**Effects ▸ Sound Effects** has 19 original sounds (Subscribe Click + Bell, Whoosh, Riser, Pop, Ding, Boing, Camera Shutter, Impact Boom, Laser Zap, Record Scratch, Tick Tock, Slide Whistles, Bubble Blips, Notification Chime, Wrong Buzzer, Ta-da!, Applause, Drum Roll + Crash). Double-click to add at the playhead on a free audio track, or drag onto the timeline. They are generated in your browser and added to the Project panel. _(Desktop app: on your Mac and saved to **Movies/Reelsmith/Sound Effects**.)_
 
 ### Auto Duck Music Under Voice
 Put the voice-over or dialogue and the music on different audio tracks. Select the **music** clip and apply **Effects ▸ Smart Audio ▸ Auto Duck Music Under Voice**: the music is lowered by 14 dB wherever someone speaks, with smooth ramps (volume keyframes you can adjust).
@@ -851,7 +851,7 @@ Effects are heard during playback and included in the export.
 3. The program plays while you speak. Program sound is muted during recording to avoid echo — use headphones to hear yourself.
 4. Press `Space` or click the mic again to stop.
 
-The recording is saved in **Movies ▸ Reelsmith ▸ Recordings**, added to the Project panel and placed on that track at the starting point.
+The recording is _(Desktop app: saved in **Movies ▸ Reelsmith ▸ Recordings**, )_added to the Project panel and placed on that track at the starting point.
 
 ---
 
@@ -866,9 +866,7 @@ The recording is saved in **Movies ▸ Reelsmith ▸ Recordings**, added to the 
 
 Speech recognition runs entirely on your computer — nothing is uploaded. Always read through the result: names, technical words and less common languages may need corrections.
 
-**In the browser:** the caption engine downloads once, the first time you click Generate (Tiny ~45 MB, Base ~80–95 MB, Small ~250–330 MB), and stays in your browser. To free the space, choose **Captions ▸ Remove Caption Engine…**; it downloads again next time you need it. Chrome and Edge use your graphics chip and are fastest.
-
-**In the desktop app:** speech recognition uses whisper.cpp. Models: Base ~150 MB, Small ~490 MB, Medium ~1.5 GB, Large v3 Turbo ~1.6 GB. whisper.cpp must be installed once: in Terminal, from the Reelsmith folder, run `./scripts/build-whisper.sh` (needs `brew install cmake`), or simply `brew install whisper-cpp`. The Auto-generate window shows these instructions until it finds the engine. On Apple Silicon a 10-minute video takes roughly 1–3 minutes with the Small model.
+The caption engine downloads once, the first time you click Generate (Tiny ~45 MB, Base ~80–95 MB, Small ~250–330 MB), and stays in your browser. To free the space, choose **Captions ▸ Remove Caption Engine…**; it downloads again next time you need it. Chrome and Edge use your graphics chip and are fastest. _(Desktop app: Speech recognition uses whisper.cpp. Models: Base ~150 MB, Small ~490 MB, Medium ~1.5 GB, Large v3 Turbo ~1.6 GB. whisper.cpp must be installed once: in Terminal, from the Reelsmith folder, run `./scripts/build-whisper.sh` (needs `brew install cmake`), or simply `brew install whisper-cpp`. The Auto-generate window shows these instructions until it finds the engine. On Apple Silicon a 10-minute video takes roughly 1–3 minutes with the Small model.)_
 
 ### Show or hide captions
 Untick **Show captions** in the Captions panel (or click **CC** in the Program monitor) to hide them from the picture without deleting them. Hidden captions are left out of exports by default; choose **Burn into the video** in the Export dialog to include them anyway.
@@ -953,17 +951,17 @@ Each camera section is a normal clip: use the [Rolling Edit tool](#the-tools-str
 Press `⌘M` or click **Export**.
 
 ### The quick way
-Click **Export** in the top bar, then **Export** in the dialog. That's it: the whole sequence is exported with the Match Source preset to your last-used folder (Movies the first time). If a file with that name already exists, Reelsmith picks a new name such as "My Movie (2)" so nothing is overwritten.
+Click **Export** in the top bar, then **Export** in the dialog. That's it: the whole sequence is exported with the Match Source preset. Chrome and Edge then ask where to save the file; Safari and Firefox save it to your Downloads folder. _(Desktop app: It goes to your last-used folder (Movies the first time). If a file with that name already exists, Reelsmith picks a new name such as "My Movie (2)" so nothing is overwritten.)_
 
 ### Settings
 - **Preset:** Match Source, YouTube 1080p or 4K, Shorts/Reels/TikTok (9:16), Instagram Square or Portrait, Vimeo, X 720p, or a small review copy.
-- **File name** and **Location:** click **Browse…** to choose a folder. Reelsmith remembers it. If you type a name that already exists, it asks before replacing the file.
+- **File name** and **Location:** type the name; Chrome and Edge let you pick the folder when you click Export (other browsers use Downloads). _(Desktop app: click **Browse…** to choose a folder. Reelsmith remembers it. If you type a name that already exists, it asks before replacing the file.)_
 - **Format:** H.264 MP4 (plays everywhere) or WebM.
 - **Frame size:** pick **Match sequence** or a standard size from the list — 4K UHD, QHD, Full HD, HD, SD, vertical 9:16 sizes, Square 1:1, Portrait 4:5 or DCI cinema sizes. Choose **Custom…** to type your own width × height. Choosing a preset sets this for you.
 - **Quality:** High, Medium or Low (smaller file).
 - **Range:** Entire Sequence (default — nothing to set up), Sequence In/Out, the selected clips, or **Custom**. To export only part, drag the orange **In** and **Out** handles on the range bar under Range (the preview shows the frame at the handle) or type the timecodes. You don't need to go back to the timeline.
 - **Render:** see [Fast vs. real-time export](#fast-vs-real-time-export).
-- **Mute speakers while exporting** and **Show in Finder when done.**
+- **Mute speakers while exporting**. _(Desktop app: and **Show in Finder when done.**)_
 
 The summary shows the resulting size, range and estimated file size. If the output shape differs from the sequence (for example a 9:16 preset on a 16:9 sequence), the picture is letterboxed — change Sequence Settings to reframe instead.
 

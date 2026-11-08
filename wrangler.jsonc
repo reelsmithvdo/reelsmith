@@ -7,7 +7,8 @@
   // The editor itself: plain static files, served free and without limits by Cloudflare.
   "assets": {
     "directory": "./src",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page"
   },
   "vars": {
     // Bug reports / feature requests become issues here. Make this repository PRIVATE

@@ -6,6 +6,7 @@ const { HELP_CATEGORIES: cats, HELP_ARTICLES: arts } = ctx.window.RS;
 const anchor = (t) => t.toLowerCase().replace(/[^a-z0-9 -]/g, '').trim().replace(/\s+/g, '-');
 const titleOf = Object.fromEntries(arts.map((a) => [a.id, a.title]));
 const md = (body) => body
+  .replace(/\{\{web:([^|}]*)\|desktop:([^}]*)\}\}/g, (_, w, d) => (w && d ? `${w} _(Desktop app: ${d.replace(/^[, ]+/, '')})_` : w || `_(Desktop app: ${d.replace(/^[, ]+/, '')})_`))
   .replace(/\[\[([\w-]+)\|([^\]]+)\]\]/g, (_, id, text) => `[${text}](#${anchor(titleOf[id] || id)})`)
   .replace(/^## /gm, '### ');
 let out = `# Reelsmith User Guide\n\n_Generated from the in-app Help Center (press F1 in Reelsmith). Do not edit by hand — edit \`src/js/help-content.js\` and run \`npm run docs\`._\n\n## Contents\n\n`;

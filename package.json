@@ -7,7 +7,8 @@
   "scripts": {
     "start": "electron .",
     "docs": "node scripts/build-docs.js",
-    "icon": "electron scripts/build-icon.js"
+    "icon": "electron scripts/build-icon.js",
+    "site": "node scripts/build-site.js"
   },
   "license": "MIT",
   "devDependencies": {

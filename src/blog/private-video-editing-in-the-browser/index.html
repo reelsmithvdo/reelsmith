@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'none'; object-src 'none'; base-uri 'self'">
+<title>Why Your Videos Never Leave Your Computer | Reelsmith</title>
+<meta name="description" content="How Reelsmith edits, captions and exports video entirely inside your browser — and why that is faster and more private than uploading.">
+<link rel="canonical" href="https://reelsmithapp.com/blog/private-video-editing-in-the-browser/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Reelsmith">
+<meta property="og:title" content="Why Your Videos Never Leave Your Computer">
+<meta property="og:description" content="How Reelsmith edits, captions and exports video entirely inside your browser — and why that is faster and more private than uploading.">
+<meta property="og:url" content="https://reelsmithapp.com/blog/private-video-editing-in-the-browser/">
+<meta property="og:image" content="https://reelsmithapp.com/assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/icon-64.png">
+<link rel="stylesheet" href="/site.css">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Blog","item":"https://reelsmithapp.com/blog/"},{"@type":"ListItem","position":2,"name":"Why Your Videos Never Leave Your Computer","item":"https://reelsmithapp.com/blog/private-video-editing-in-the-browser/"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Why Your Videos Never Leave Your Computer","description":"How Reelsmith edits, captions and exports video entirely inside your browser — and why that is faster and more private than uploading.","url":"https://reelsmithapp.com/blog/private-video-editing-in-the-browser/","image":"https://reelsmithapp.com/assets/og.jpg","datePublished":"2026-11-08","dateModified":"2026-11-08","author":{"@type":"Organization","name":"Reelsmith"},"publisher":{"@type":"Organization","name":"Reelsmith","logo":{"@type":"ImageObject","url":"https://reelsmithapp.com/assets/icon-256.png"}}}</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="/features/"><img src="/assets/icon-64.png" alt="" width="28" height="28">Reelsmith</a>
+    <nav aria-label="Main"><a href="/features/">Features</a><a href="/tutorials/">Tutorials</a><a href="/docs/">Docs</a><a href="/blog/" aria-current="page">Blog</a></nav>
+    <a class="btn" href="/">Open Editor</a>
+  </div>
+</header>
+<main id="main">
+<div class="wrap narrow"><article class="prose">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="/blog/">Blog</a><span>›</span><span aria-current="page">Why Your Videos Never Leave Your Computer</span></nav>
+<h1>Why Your Videos Never Leave Your Computer</h1>
+<p class="meta"><time datetime="2026-11-08">November 8, 2026</time> · 2 min read</p>
+<p class="lead">How Reelsmith edits, captions and exports video entirely inside your browser — and why that is faster and more private than uploading.</p>
+<p>&quot;Online video editor&quot; usually means &quot;upload your video to someone else's computer&quot;. Reelsmith works differently: it is a website, but the editing happens on <strong>your</strong> machine. Here's how, and why it matters.</p>
+<h2 id="the-browser-has-become-a-video-workstation">The browser has become a video workstation</h2>
+<p>Modern browsers ship with the building blocks of a video editor:</p>
+<ul><li><strong>Hardware video decoding and encoding</strong> (WebCodecs) — the same video chips your computer uses to play and record video.</li><li><strong>The graphics chip</strong> (WebGL and WebGPU) for real-time effects, color correction and compositing.</li><li><strong>A professional audio engine</strong> (Web Audio) for mixing, EQ, compression and effects.</li><li><strong>Direct file access</strong> — in Chrome and Edge, a website can read the files you choose and save a new file where you say, with your permission.</li></ul>
+<p>Reelsmith uses these directly. When you press play, your browser decodes the frames, Reelsmith composites titles, effects and transitions on the graphics chip, and the result appears in the Program monitor. When you export, the same pipeline runs faster than real time and the encoder writes an MP4 straight to your disk.</p>
+<h2 id="what-this-means-for-you">What this means for you</h2>
+<ul><li><strong>Privacy.</strong> Client footage, family videos and unreleased work are never copied to a server.</li><li><strong>No waiting for uploads.</strong> A 4 GB file is ready to edit the moment you import it.</li><li><strong>No server-side limits.</strong> File size and length are limited only by your computer.</li><li><strong>It keeps working when the connection drops.</strong> Once the page has loaded, editing doesn't need the internet.</li></ul>
+<h2 id="what-about-auto-captions">What about auto captions?</h2>
+<p>Speech recognition usually happens in the cloud. In Reelsmith it doesn't. The first time you click <strong>Generate</strong>, your browser downloads an open-source speech model (Whisper) once and keeps it. From then on, your audio is transcribed on your device — it is never sent anywhere. You can remove the model at any time from <strong>Captions ▸ Remove Caption Engine</strong>.</p>
+<h2 id="what-is-stored-and-where">What <em>is</em> stored, and where</h2>
+<ul><li><strong>Projects</strong> you save are kept in your browser's storage on your computer. Use <strong>File ▸ Download Project File</strong> for a backup you can move to another machine.</li><li><strong>Your media</strong> stays in its original folder. In Chrome and Edge, Reelsmith remembers which files a project uses, so it can reopen them next time after you click <strong>Reconnect files</strong>.</li></ul>
+<p>The full details are in our <a href="/privacy/">Privacy Policy</a>.</p>
+<h2 id="the-trade-offs">The trade-offs</h2>
+<p>Doing everything locally means your computer does the work. A recent laptop handles 1080p editing comfortably; very long 4K projects are smoother on a desktop with plenty of memory. Chrome and Edge currently offer the best performance and file access; Safari and Firefox work, with exports saved to Downloads.</p>
+<p>Ready to try it? <a href="/">Open the editor</a> — there is nothing to install.</p>
+<div class="cta"><div><strong>Try it now — free, no sign-up.</strong><span>Reelsmith runs in your browser. Your videos are never uploaded.</span></div><a class="btn" href="/">Open the editor</a></div>
+</article></div>
+</main>
+<footer class="site-foot">
+  <div class="wrap cols">
+    <div><a class="logo" href="/features/"><img src="/assets/icon-64.png" alt="" width="24" height="24">Reelsmith</a><p>Free video editor in your browser. Your files stay on your computer.</p></div>
+    <div><h4>Product</h4><a href="/">Open Editor</a><a href="/features/">Features</a><a href="/docs/browser-edition/">Browser support</a></div>
+    <div><h4>Learn</h4><a href="/tutorials/">Tutorials</a><a href="/docs/">Documentation</a><a href="/docs/shortcuts/">Keyboard shortcuts</a><a href="/blog/">Blog</a></div>
+    <div><h4>Support</h4><a href="/?report=bug">Report a bug</a><a href="/?report=feature">Request a feature</a><a href="/docs/faq/">FAQ</a></div>
+    <div><h4>Reelsmith</h4><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a></div>
+  </div>
+  <div class="wrap fine">© 2026 Reelsmith</div>
+</footer>
+</body>
+</html>

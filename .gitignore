@@ -4,3 +4,6 @@ node_modules/
 # Whisper is downloaded by users on demand, never shipped
 vendor/whisper/
 dist/
+# Google service-account keys must never be committed
+reel-smith-*.json
+*service-account*.json

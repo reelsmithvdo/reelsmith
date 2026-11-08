@@ -637,3 +637,7 @@ kbd { flex: none; min-width: 96px; font-family: ui-monospace, Menlo, monospace; 
 .fb-trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .fb-status { min-height: 18px; margin: 0; }
 .fb-status .btn { margin-left: 6px; }
+
+.site-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; font-size: 12.5px; padding-bottom: 4px; }
+.site-links a { color: var(--text-3); text-decoration: none; }
+.site-links a:hover { color: var(--text); }

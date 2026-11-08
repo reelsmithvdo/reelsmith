@@ -3,6 +3,9 @@
 (function (RS) {
   const H = RS.help = {};
   let back = null, navEl, articleEl, searchEl, current = null;
+  // Articles and passages for the other edition are left out: {{web:…|desktop:…}} and only:'web'/'desktop'.
+  const ED = window.native ? 'desktop' : 'web';
+  RS.HELP_ARTICLES = RS.HELP_ARTICLES.filter((a) => !a.only || a.only === ED).map((a) => Object.assign({}, a, { body: RS.helpVariant(a.body, ED) }));
   const byId = (id) => RS.HELP_ARTICLES.find((a) => a.id === id);
 
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

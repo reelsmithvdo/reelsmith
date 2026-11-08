@@ -427,6 +427,14 @@
     return new Date(t).toLocaleDateString();
   };
 
+  // The website links live in index.html (so search engines see them); show them on the start screen.
+  const siteLinks = () => {
+    const n = document.getElementById('site-links');
+    if (!n) return null;
+    const c = n.cloneNode(true);
+    c.removeAttribute('id'); c.hidden = false;
+    return c;
+  };
   W.isHomeOpen = () => !!home;
   W.hideHome = () => { if (home) { home.remove(); home = null; RS.engine.invalidate(); } };
   W.home = async () => {
@@ -444,6 +452,7 @@
         side('file', 'Open Project File', () => W.openProjectFile()),
         RS.h('div', { class: 'home-side-sep' }),
         side('help', 'Help Center', () => RS.cmd('help')),
+        side('film', 'Tutorials', () => { location.href = '/tutorials/'; }),
         side('keyboard', 'Keyboard Shortcuts', () => RS.cmd('shortcuts')),
         RS.h('div', { class: 'home-side-sep' }),
         side('bug', 'Report a Bug', () => W.feedback('bug')),
@@ -459,7 +468,8 @@
           auto ? big('undo', `Recover “${auto.name}”`, go(async () => { const ok = await RS.app.loadProjectText(auto.saved.project, auto.saved.filePath || null); if (ok) RS.markDirty(true); })) : null),
         drop,
         recentBox,
-        RS.h('div', { class: 'home-formats' }, ['MP4', 'MOV', 'WEBM', 'MKV', 'MP3', 'WAV', 'M4A', 'PNG', 'JPG', 'GIF'].map((f) => RS.h('span', null, f)))));
+        RS.h('div', { class: 'home-formats' }, ['MP4', 'MOV', 'WEBM', 'MKV', 'MP3', 'WAV', 'M4A', 'PNG', 'JPG', 'GIF'].map((f) => RS.h('span', null, f))),
+        siteLinks()));
     // Dropped files import and the editor opens.
     drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
     drop.addEventListener('dragleave', () => drop.classList.remove('over'));
@@ -506,6 +516,12 @@
       RS.h('button', { type: 'button', onclick: () => W.feedback('feature') }, 'Request a Feature'));
     RS.$('#topbar-actions').before(links);
     if (!window.__RS_TEST__) W.home();
+    // Links from the website: /?report=bug or /?report=feature open the form.
+    const rep = new URLSearchParams(location.search).get('report');
+    if (rep === 'bug' || rep === 'feature') {
+      history.replaceState(null, '', location.pathname);
+      setTimeout(() => W.feedback(rep), 300);
+    }
   };
 
   const extraIcons = {
