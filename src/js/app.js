@@ -570,7 +570,7 @@
   C.helpFaq = () => RS.help.open('faq');
   C.about = () => RS.modal({
     title: 'About Reelsmith',
-    body: RS.h('div', { class: 'about' }, RS.h('img', { src: 'assets/icon-128.png', width: 96, height: 96, alt: '' }), RS.h('p', null, 'Reelsmith 1.0 — a non-linear video editor.'), RS.h('p', { class: 'muted small' }, 'Original software. Multi-track editing, keyframes, titles, color, audio mixing and H.264 export.')),
+    body: RS.h('div', { class: 'about' }, RS.h('img', { src: 'assets/icon-128.png', width: 96, height: 96, alt: '' }), RS.h('p', null, 'Reelsmith 1.0 — a non-linear video editor.'), RS.h('p', { class: 'muted small' }, 'Original software. Multi-track editing, keyframes, titles, color, audio mixing and H.264 export.'), RS.h('p', { class: 'muted small' }, 'Contact: reelsmith.vdo@gmail.com')),
   });
 
   // --- files ---

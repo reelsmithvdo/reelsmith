@@ -395,7 +395,9 @@
               return true;
             } catch (err) {
               status.textContent = '';
-              status.append('Could not send right now (' + err.message + '). ',
+              status.append('Could not send right now (' + err.message + '). Email it to ',
+                RS.h('a', { href: 'mailto:reelsmith.vdo@gmail.com?subject=' + encodeURIComponent((bug ? '[Bug] ' : '[Feature] ') + p.title) + '&body=' + encodeURIComponent(asText(p).slice(0, 1800)) }, 'reelsmith.vdo@gmail.com'),
+                ' or ',
                 RS.h('button', { class: 'btn small', type: 'button', onclick: async () => {
                   try { await navigator.clipboard.writeText(asText(p)); RS.toast('Report copied — please try again later', 'ok'); } catch { RS.toast('Copy failed', 'error'); }
                 } }, 'Copy report'));

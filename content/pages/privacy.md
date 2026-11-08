@@ -35,4 +35,4 @@ Reelsmith does not set tracking cookies today. If we add advertising or analytic
 Reelsmith is a general-audience tool and does not knowingly collect personal information from children.
 
 ## Changes and contact
-We will post any changes on this page with a new date. Questions? Use [Report a bug](/?report=bug) and choose a title starting with "Privacy".
+We will post any changes on this page with a new date. Questions about privacy? Email [reelsmith.vdo@gmail.com](mailto:reelsmith.vdo@gmail.com).

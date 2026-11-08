@@ -19,3 +19,6 @@ Reelsmith is provided "as is", without warranties of any kind. We do our best to
 
 ## Changes
 We may update Reelsmith and these terms. The date above shows the latest version.
+
+## Contact
+[reelsmith.vdo@gmail.com](mailto:reelsmith.vdo@gmail.com)
