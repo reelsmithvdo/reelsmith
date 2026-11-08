@@ -999,6 +999,7 @@
     RS.captions.init(RS.$('#captions'));
     RS.library.init(RS.$('#library'));
     RS.timeline.init(RS.$('#timeline'));
+    RS.touch.init();
     setupStatus();
     RS.on('change', (o) => { if (!o || o.source !== 'thumb') autosave(); });
     RS.on('dirty', autosave);

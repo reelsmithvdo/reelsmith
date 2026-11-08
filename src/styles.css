@@ -43,7 +43,7 @@ input, textarea, .proj-name { user-select: text; }
 .col { display: flex; flex-direction: column; }
 .scroll { overflow: auto; }
 
-#app { display: flex; flex-direction: column; height: 100vh; }
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
 
 /* ---------- top bar ---------- */
 #topbar { height: 42px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 84px; background: #0e1013; border-bottom: 1px solid var(--line); -webkit-app-region: drag; }
@@ -641,3 +641,95 @@ kbd { flex: none; min-width: 96px; font-family: ui-monospace, Menlo, monospace; 
 .site-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; font-size: 12.5px; padding-bottom: 4px; }
 .site-links a { color: var(--text-3); text-decoration: none; }
 .site-links a:hover { color: var(--text); }
+
+/* ---------- touch screens (html.touch) and phones (html.compact) — see js/touch.js ---------- */
+.bin-add, #mobile-nav, .sheet-close { display: none; }
+html.touch { -webkit-tap-highlight-color: transparent; }
+html.touch body { touch-action: manipulation; }
+/* Dragging these must never scroll or zoom the page. */
+html.touch .tl-clip, html.touch .tl-ruler, html.touch .tl-ruler-row, html.touch .tl-playhead, html.touch .zb-track,
+html.touch .program-overlay, html.touch .mon-stage, html.touch canvas, html.touch .splitter, html.touch .scrub,
+html.touch input[type=range], html.touch .tl-corner { touch-action: none; }
+/* One finger on empty timeline space scrolls it. */
+html.touch .tl-scroller { touch-action: pan-x pan-y; }
+html.touch .bin-add { display: inline-flex; margin-left: auto; flex: none; width: 34px; height: 34px; border-radius: 8px; background: var(--panel-3); }
+html.touch .tab { padding: 0 14px; }
+html.touch .ibtn { min-width: 30px; min-height: 30px; }
+html.touch .menu-item { padding: 10px 12px; }
+
+/* Tablets and small laptops */
+@media (max-width: 1100px) {
+  .is-web .proj-name { display: none; }
+  .mon-controls { flex-wrap: wrap; justify-content: center; row-gap: 2px; }
+  .mon-right { min-width: 0; width: 100%; justify-content: center; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .mon-right > * { flex: none; }
+}
+.tabs { overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { white-space: nowrap; flex: none; }
+.is-web .px-btn { display: none; } /* proxies are a desktop-app feature */
+@media (max-width: 1100px) and (min-width: 761px) {
+  .menubar { overflow-x: auto; scrollbar-width: none; min-width: 0; flex: 1 1 auto; }
+  .menubar::-webkit-scrollbar { display: none; }
+  #topbar .grow { display: none; }
+}
+
+/* Phones */
+html.compact #topbar { padding: 0 6px; gap: 2px; height: 46px; padding-top: env(safe-area-inset-top); }
+html.compact #topbar .brand { font-size: 0; gap: 0; padding: 4px; }
+html.compact #topbar .brand-mark { width: 26px; height: 26px; }
+html.compact .menubar { flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+html.compact .menubar::-webkit-scrollbar { display: none; }
+html.compact .menubar-btn { font-size: 14px; padding: 8px 9px; }
+html.compact .proj-name, html.compact .topbar-links, html.compact #topbar .grow { display: none; }
+html.compact #topbar-actions { gap: 0; flex: none; }
+html.compact #topbar-actions > :not(:first-child):not(:nth-child(2)):not(.primary) { display: none; }
+html.compact #topbar-actions .btn.primary { font-size: 0; gap: 0; padding: 6px 10px; }
+html.compact #topbar-actions .btn.primary .ico { width: 18px; height: 18px; }
+html.compact .home { top: 46px; }
+html.compact #statusbar { display: none; }
+html.compact #workspace { display: flex; flex-direction: column; gap: 4px; padding: 4px 4px calc(60px + env(safe-area-inset-bottom)); }
+html.compact #workspace > .splitter { display: none; }
+html.compact #workspace > section[data-panels="program"] { flex: 0 0 auto; height: 40%; min-height: 200px; }
+html.compact #workspace > section[data-panels="timeline"] { flex: 1 1 auto; min-height: 0; }
+html.compact #workspace > section[data-tabs] {
+  position: fixed; z-index: 800; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom)); height: min(62%, 560px);
+  border-radius: 14px 14px 0 0; border-bottom: 0; box-shadow: 0 -16px 40px rgba(0,0,0,.55);
+  transform: translateY(calc(100% + 70px)); transition: transform .22s ease; visibility: hidden;
+}
+html.compact #workspace > section[data-tabs].sheet-open { transform: none; visibility: visible; }
+html.compact .tabs { height: 42px; overflow-x: auto; scrollbar-width: none; align-items: stretch; }
+html.compact .tabs::-webkit-scrollbar { display: none; }
+html.compact .tab { white-space: nowrap; font-size: 14px; }
+html.compact .sheet-close { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; flex: none; width: 42px; background: none; border: 0; color: var(--text-2); }
+html.compact #mobile-nav {
+  display: flex; position: fixed; z-index: 850; left: 0; right: 0; bottom: 0; height: calc(56px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom); background: #0e1013; border-top: 1px solid var(--line);
+}
+#mobile-nav button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: none; border: 0; color: var(--text-3); font: inherit; font-size: 11px; }
+#mobile-nav button .ico svg { width: 21px; height: 21px; }
+#mobile-nav button.on { color: var(--accent); }
+html.compact .mon-name { display: none; }
+html.compact .mon-controls { flex-wrap: wrap; gap: 2px 6px; }
+html.compact .mon-right { width: 100%; justify-content: center; overflow-x: auto; flex-wrap: nowrap; }
+html.compact .mon-right > * { flex: none; }
+html.compact .mc-btn { display: none; }
+html.compact #toasts { bottom: calc(66px + env(safe-area-inset-bottom)); }
+html.compact .tl-toolbar { overflow-x: auto; scrollbar-width: none; gap: 6px; padding: 4px 6px; }
+html.compact .tl-toolbar::-webkit-scrollbar { display: none; }
+html.compact .tl-toolbar > * { flex: none; }
+html.compact .tool-strip { width: 34px; }
+html.compact .meter-col { display: none; }
+html.compact .tl-head { padding: 0 3px; gap: 2px; }
+html.compact .tl-head-btns .ibtn:nth-child(n+3) { display: none; }
+html.compact .seq-tabs { display: none; }
+html.compact .modal, html.compact .modal.wide { width: calc(100vw - 16px); max-height: calc(100dvh - 24px); }
+html.compact .form-row { grid-template-columns: 1fr; gap: 4px; }
+html.compact .form-row.check { grid-template-columns: 22px 1fr; }
+html.compact input[type=text], html.compact input[type=email], html.compact input[type=number], html.compact select, html.compact textarea { font-size: 16px; height: 34px; } /* no iOS zoom-on-focus */
+html.compact .fb-text { height: auto; }
+html.compact .kb-win { width: 100vw; height: 100dvh; border-radius: 0; border: 0; }
+html.compact .kb-main { flex-direction: column; }
+html.compact .kb-nav { width: 100%; max-height: 34%; border-right: 0; border-bottom: 1px solid var(--line); }
+html.compact .kb-article { padding: 16px 16px 30px; }
+#site-links[hidden] { display: none !important; }

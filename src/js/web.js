@@ -303,9 +303,10 @@
       }, RS.h('span', null, label), key ? RS.h('span', { class: 'menu-key' }, key) : null));
     }
     const r = btn.getBoundingClientRect();
-    drop.style.left = r.left + 'px';
     drop.style.top = r.bottom + 2 + 'px';
     document.body.append(drop);
+    // Keep the menu on screen (narrow phones).
+    drop.style.left = Math.max(4, Math.min(r.left, innerWidth - drop.offsetWidth - 4)) + 'px';
     btn.classList.add('on');
     openMenu = { btn, drop };
   }

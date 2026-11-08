@@ -3,7 +3,9 @@
 // and every editing gesture (select, move, trim, ripple, roll, rate stretch, razor, slip, slide…).
 (function (RS) {
   const S = RS.state;
-  const HEAD_W = 156;
+  // Track header width: narrower on phones (html.compact, see app.js) so more of the timeline shows.
+  const PHONE = window.matchMedia('(max-width: 760px)');
+  let HEAD_W = PHONE.matches ? 100 : 156;
   const RULER_H = 30;
   const TRACK_H = { video: 62, audio: 54, caption: 34 };
   const SNAP_PX = 9;
@@ -90,6 +92,12 @@
       RS.h('div', { class: 'zb-handle l' }), RS.h('div', { class: 'zb-handle r' }));
     zbTrack = RS.h('div', { class: 'zb-track' }, zbThumb);
     const zoomBar = RS.h('div', { class: 'tl-zoombar', style: { paddingLeft: HEAD_W + 'px' } }, zbTrack);
+    PHONE.addEventListener('change', () => {
+      HEAD_W = PHONE.matches ? 100 : 156;
+      corner.style.width = HEAD_W + 'px';
+      zoomBar.style.paddingLeft = HEAD_W + 'px';
+      TL.render();
+    });
     zbTrack.addEventListener('pointerdown', onZoomBarDown);
     zbTrack.addEventListener('dblclick', () => TL.zoomFit());
     main.append(seqTabs, toolbar, scroller, zoomBar);

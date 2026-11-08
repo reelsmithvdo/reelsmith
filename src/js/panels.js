@@ -105,7 +105,9 @@
     }, thumb, RS.h('div', { class: 'info' },
       RS.h('div', { class: 'name' }, m.name),
       RS.h('div', { class: 'meta' }, meta.join(' · ')),
-      RS.h('div', { class: 'usage', 'data-usage': m.id })));
+      RS.h('div', { class: 'usage', 'data-usage': m.id })),
+      // Touch screens: a visible "add to timeline" button (dragging from the panel needs a mouse).
+      offline ? null : RS.h('button', { class: 'ibtn bin-add', type: 'button', title: 'Add to timeline at playhead', onclick: (e) => { e.stopPropagation(); PB.addAtPlayhead(m.id); } }, RS.icon('plus')));
     el.addEventListener('click', (e) => {
       if (!(e.shiftKey || e.metaKey)) S.selectedMedia.clear();
       if (S.selectedMedia.has(m.id) && (e.shiftKey || e.metaKey)) S.selectedMedia.delete(m.id); else S.selectedMedia.add(m.id);
@@ -120,6 +122,7 @@
       e.preventDefault();
       if (!S.selectedMedia.has(m.id)) { S.selectedMedia = new Set([m.id]); RS.$$('.bin-item', pbList).forEach((x) => x.classList.toggle('selected', S.selectedMedia.has(x.dataset.id))); }
       RS.contextMenu(e.clientX, e.clientY, [
+        { label: 'Add to Timeline at Playhead', disabled: offline, run: () => PB.addAtPlayhead(m.id) },
         { label: 'Open in Source Monitor', disabled: offline, run: () => RS.sourceMonitor.load(m.id) },
         { label: 'Create Multi-Camera Source Sequence…', disabled: S.selectedMedia.size < 2, run: () => RS.cmd('createMulticam') },
         { label: 'Create Proxies', disabled: m.type !== 'video', run: () => RS.proxies.create([...S.selectedMedia]) },
@@ -160,6 +163,21 @@
     const el = pbList.querySelector(`[data-id="${mediaId}"]`);
     if (el) el.scrollIntoView({ block: 'nearest' });
     RS.setActivePanel('project');
+  };
+
+  // Put a media item on the timeline at the playhead, on the first track that is free there
+  // (touch screens cannot drag from the Project panel).
+  PB.addAtPlayhead = (mediaId) => {
+    const m = RS.getMedia(mediaId);
+    if (!m) return;
+    const t = S.playhead, d = m.type === 'image' ? 5 : m.duration;
+    const kind = m.type === 'audio' ? 'audio' : 'video';
+    const free = (tr) => !tr.locked && !S.project.clips.some((c) => c.trackId === tr.id && c.start < t + d - RS.EPS && RS.clipEnd(c) > t + RS.EPS);
+    RS.commit('Add ' + m.name, () => {
+      const tr = RS.tracksOf(kind).find(free) || RS.ops.addTrack(kind);
+      RS.ops.placeMedia(m.id, tr.id, t, {});
+    });
+    if (RS.touch && RS.touch.isPhone()) RS.touch.closeSheet();
   };
 
   PB.deleteSelected = async () => {

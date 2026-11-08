@@ -27,11 +27,11 @@
     playBtn = RS.iconBtn('play', 'Play / pause (Space)', () => RS.engine.toggle(), 'play-main');
     safeBtn = RS.h('button', { class: 'btn small', title: 'Toggle safe margins' }, 'Safe');
     safeBtn.addEventListener('click', () => { showSafe = !showSafe; safeBtn.classList.toggle('on', showSafe); drawOverlay(); });
-    mcBtn = RS.h('button', { class: 'btn small', title: 'Multi-Camera view: see every angle, click to cut' }, 'Multi-Camera');
+    mcBtn = RS.h('button', { class: 'btn small mc-btn', title: 'Multi-Camera view: see every angle, click to cut' }, 'Multi-Camera');
     // Playback resolution: render smaller while playing for smooth playback (paused frames and export stay full quality).
     const resSel = RS.h('select', { class: 'small', title: 'Playback resolution' }, [['1', 'Full'], ['0.5', '1/2'], ['0.25', '1/4']].map(([v, l]) => RS.h('option', { value: v }, l)));
     resSel.addEventListener('change', () => { RS.engine.playRes = +resSel.value; RS.engine.invalidate(); });
-    const pxBtn = RS.h('button', { class: 'btn small', title: 'Play proxy files instead of the originals (export always uses originals)' }, 'Proxies');
+    const pxBtn = RS.h('button', { class: 'btn small px-btn', title: 'Play proxy files instead of the originals (export always uses originals)' }, 'Proxies');
     pxBtn.addEventListener('click', () => RS.proxies.toggle());
     RS.on('proxies', (on) => pxBtn.classList.toggle('on', on));
     PM.resSel = resSel; PM.pxBtn = pxBtn;
