@@ -731,7 +731,8 @@
 
   function updateTitle() {
     const t = `${S.project.name}${S.dirty ? ' •' : ''} — Reelsmith`;
-    document.title = t;
+    // Website: keep the descriptive page title (search results, bookmarks) until real work starts.
+    document.title = RS.web && !S.dirty && S.project.name === 'Untitled Project' && !S.project.media.length ? 'Reelsmith — Free Online Video Editor' : t;
     const n = RS.$('#proj-name');
     if (n && document.activeElement !== n) n.value = S.project.name;
     if (RS.native) { RS.native.setTitle(t); RS.native.setEdited(S.dirty); }

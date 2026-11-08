@@ -14,5 +14,8 @@
     // (reports can contain email addresses). Add the GITHUB_TOKEN secret in the dashboard.
     "FEEDBACK_REPO": "reelsmithvdo/reelsmith-feedback"
   },
+  // Custom domain (bought through Cloudflare). www → root is a Redirect Rule in the dashboard,
+  // so static files stay free (routing them through the Worker would count against its quota).
+  "routes": [{ "pattern": "reelsmithapp.com", "custom_domain": true }],
   "observability": { "enabled": true }
 }
