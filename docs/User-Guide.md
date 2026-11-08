@@ -7,6 +7,7 @@ _Generated from the in-app Help Center (press F1 in Reelsmith). Do not edit by h
 **Getting Started**
 
 - [Welcome to Reelsmith](#welcome-to-reelsmith)
+- [Reelsmith in your browser](#reelsmith-in-your-browser)
 - [Installing and starting Reelsmith](#installing-and-starting-reelsmith)
 - [The workspace](#the-workspace)
 - [Your first edit in 5 minutes](#your-first-edit-in-5-minutes)
@@ -105,7 +106,7 @@ _Generated from the in-app Help Center (press F1 in Reelsmith). Do not edit by h
 
 ## Welcome to Reelsmith
 
-Reelsmith is a desktop non-linear video editor for macOS. You bring media into a project, arrange it on a multi-track timeline, add titles, effects, transitions and color, and export finished video files.
+Reelsmith is a non-linear video editor that runs in your web browser and as a desktop app for macOS. You bring media into a project, arrange it on a multi-track timeline, add titles, effects, transitions and color, and export finished video files.
 
 ### What you can do
 - Edit video, audio and still images on unlimited video and audio tracks.
@@ -118,6 +119,36 @@ Reelsmith is a desktop non-linear video editor for macOS. You bring media into a
 - New to editing? Follow [Your first edit in 5 minutes](#your-first-edit-in-5-minutes).
 - Want a map of the screen? Read [The workspace](#the-workspace).
 - Looking for a key? See [Keyboard shortcuts](#keyboard-shortcuts).
+- Using the website? Read [Reelsmith in your browser](#reelsmith-in-your-browser).
+
+## Reelsmith in your browser
+
+The browser edition is the full editor on a web page — nothing to install. Your videos are **never uploaded**: editing and exporting happen on your own computer.
+
+### Best browsers
+- **Chrome** or **Edge** (recommended): fastest export, export straight to a file you choose, and media that reconnects automatically when you reopen a project.
+- **Safari** and **Firefox** work too; exports go to your Downloads folder and media may need relinking after you reopen a project.
+
+### The start screen
+Each visit opens the start screen: **New Project**, **Open From Computer** (import media), **Start Editing**, your **Recent projects**, and a drop zone for files. Click the Reelsmith logo or choose **File ▸ Home** to come back to it.
+
+### Saving
+- **File ▸ Save** (`⌘S` / `Ctrl+S`) keeps the project in this browser; it appears under Recent projects.
+- **File ▸ Download Project File** saves a `.rsproj` copy on your disk (for backups or another computer). Open it with **File ▸ Open Project File**.
+- Projects contain your edits, not your media files. Keep the original videos where they are.
+- Clearing your browser's site data deletes projects saved in the browser — download a project file for anything important.
+
+### Reconnecting media
+In Chrome and Edge, when you reopen a project Reelsmith asks once for permission to read your media files again — click **Reconnect files**. Files added in other browsers, or moved since, show as offline: right-click ▸ **Relink** (see [Offline media and relinking](#offline-media-and-relinking)).
+
+### Exporting
+Click **Export**, then **Export** again. Chrome and Edge ask where to save the video; other browsers put it in Downloads. Keep the tab open until the export finishes.
+
+### Keyboard
+All single-key shortcuts work. A few browser shortcuts can't be taken over (for example `⌘T`, `⌘N`, `⌘W`) — use the menu bar or the tool keys instead (`T` is the Text tool).
+
+### Feedback
+Found a problem or have an idea? Use **Report a Bug** or **Request a Feature** at the top right (or in the Help menu).
 
 ## Installing and starting Reelsmith
 
@@ -831,11 +862,13 @@ The recording is saved in **Movies ▸ Reelsmith ▸ Recordings**, added to the 
 ### Auto-generate captions from speech
 1. Open the **Captions** tab (bottom-left panel) and click **Auto-generate** (or **Sequence ▸ Auto-generate Captions…**).
 2. Choose what to transcribe (entire sequence, In/Out or selected clips), the **spoken language** (or Detect automatically) and the **accuracy** model. Tick **Translate the captions into English** if you want English captions from another language.
-3. Click **Generate**. The first time, the chosen model downloads once (Base ~150 MB, Small ~490 MB, Medium ~1.5 GB, Large v3 Turbo ~1.6 GB).
+3. Click **Generate**. The first time, the chosen model downloads once (sizes below).
 
-Speech recognition runs entirely on your Mac with whisper.cpp — nothing is uploaded. On Apple Silicon a 10-minute video takes roughly 1–3 minutes with the Small model. Always read through the result: names, technical words and less common languages may need corrections.
+Speech recognition runs entirely on your computer — nothing is uploaded. Always read through the result: names, technical words and less common languages may need corrections.
 
-**First-time setup:** whisper.cpp must be installed once. In Terminal, from the Reelsmith folder, run `./scripts/build-whisper.sh` (needs `brew install cmake`), or simply `brew install whisper-cpp`. The Auto-generate window shows these instructions until it finds the engine.
+**In the browser:** the caption engine downloads once, the first time you click Generate (Tiny ~45 MB, Base ~80–95 MB, Small ~250–330 MB), and stays in your browser. To free the space, choose **Captions ▸ Remove Caption Engine…**; it downloads again next time you need it. Chrome and Edge use your graphics chip and are fastest.
+
+**In the desktop app:** speech recognition uses whisper.cpp. Models: Base ~150 MB, Small ~490 MB, Medium ~1.5 GB, Large v3 Turbo ~1.6 GB. whisper.cpp must be installed once: in Terminal, from the Reelsmith folder, run `./scripts/build-whisper.sh` (needs `brew install cmake`), or simply `brew install whisper-cpp`. The Auto-generate window shows these instructions until it finds the engine. On Apple Silicon a 10-minute video takes roughly 1–3 minutes with the Small model.
 
 ### Show or hide captions
 Untick **Show captions** in the Captions panel (or click **CC** in the Program monitor) to hide them from the picture without deleting them. Hidden captions are left out of exports by default; choose **Burn into the video** in the Export dialog to include them anyway.

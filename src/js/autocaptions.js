@@ -1,5 +1,6 @@
 'use strict';
-// Auto-generate captions from speech with whisper.cpp running locally (offline, nothing leaves the Mac).
+// Auto-generate captions from speech with Whisper running locally — whisper.cpp in the desktop app,
+// transformers.js in a Web Worker in the browser. Audio never leaves the user's computer.
 (function (RS) {
   const S = RS.state;
   const AC = RS.autoCaptions = {};
@@ -41,10 +42,77 @@
     return out.filter((c) => c.end - c.start > 0.05);
   };
 
+  // ---------- browser engine ----------
+  const WEB_MODELS = [
+    { id: 'whisper-tiny', label: 'Tiny — fastest (~45 MB)', size: 45e6 },
+    { id: 'whisper-base', label: 'Base — balanced (~80–95 MB)', size: 90e6 },
+    { id: 'whisper-small', label: 'Small — most accurate (~250–330 MB)', size: 300e6 },
+  ];
+  const CACHE = 'transformers-cache';
+  const cachedModels = async () => {
+    const have = new Set();
+    try {
+      if (!(await caches.has(CACHE))) return have;
+      const keys = await (await caches.open(CACHE)).keys();
+      for (const k of keys) { const m = k.url.match(/onnx-community\/(whisper-[a-z]+)\/.*decoder_model_merged/); if (m) have.add(m[1]); }
+    } catch { /* cache unavailable */ }
+    return have;
+  };
+  let worker = null;
+  const webEngine = {
+    async status() {
+      const have = await cachedModels();
+      return { binary: true, models: WEB_MODELS.map((m) => Object.assign({ downloaded: have.has(m.id) }, m)) };
+    },
+    download: async () => {}, // downloads happen inside transcribe (progress is reported as 'download')
+    async transcribe({ samples, model, language, translate }) {
+      let device = 'wasm';
+      try { if (!AC.forceCpu && navigator.gpu && (await navigator.gpu.requestAdapter())) device = 'webgpu'; } catch { /* no WebGPU */ }
+      if (!worker) worker = new Worker('js/whisper-worker.js', { type: 'module' });
+      const w = worker;
+      return new Promise((resolve, reject) => {
+        w.onmessage = (e) => {
+          const m = e.data;
+          if (m.type === 'progress') AC._onProgress && AC._onProgress(m);
+          else if (m.type === 'done') resolve(m.segments);
+          else if (m.type === 'error') reject(new Error(m.message));
+        };
+        w.onerror = (e) => { e.preventDefault(); reject(new Error(e.message || 'The caption engine could not start (check your internet connection)')); };
+        webEngine._reject = reject;
+        const audio = samples.slice();
+        w.postMessage({ type: 'run', id: Date.now(), model, audio, language, translate, device }, [audio.buffer]);
+      });
+    },
+    cancel() {
+      if (worker) { worker.terminate(); worker = null; }
+      if (webEngine._reject) webEngine._reject(new Error('cancelled'));
+    },
+  };
+  const nativeEngine = {
+    status: () => RS.native.whisperStatus(),
+    download: (id) => RS.native.whisperDownload(id),
+    transcribe: ({ samples, model, language, translate }) => RS.native.whisperTranscribe({ wav: AC.wav(samples), model, language, translate }),
+    cancel: () => RS.native.whisperCancel(),
+  };
+  const engine = () => (RS.native ? nativeEngine : webEngine);
+
+  // Browser: free the space used by the caption engine.
+  AC.removeEngine = async () => {
+    if (RS.native) return RS.toast('The desktop app keeps speech models in ~/Library/Application Support/Reelsmith/whisper');
+    let size = 0;
+    try { if (!(await caches.has(CACHE))) return RS.toast('The caption engine is not downloaded'); } catch { return RS.toast('Browser storage is unavailable', 'error'); }
+    try { for (const k of await (await caches.open(CACHE)).keys()) { const r = await caches.match(k); if (r) size += +(r.headers.get('content-length') || 0); } } catch { /* ignore */ }
+    const ok = await RS.confirm('Remove caption engine?', `Delete the downloaded speech models${size ? ` (${(size / 1e6).toFixed(0)} MB)` : ''} from this browser? They download again the next time you generate captions.`, 'Remove', true);
+    if (!ok) return;
+    if (worker) { worker.terminate(); worker = null; }
+    await caches.delete(CACHE);
+    RS.toast('Caption engine removed', 'ok');
+  };
+
   AC.open = async () => {
-    if (!RS.native) return RS.toast('Auto-generated captions need the desktop app');
     if (RS.seqDuration() <= 0) return RS.toast('Add a clip with speech to the timeline first');
-    const st = await RS.native.whisperStatus();
+    const web = !RS.native;
+    const st = await engine().status();
     const p = prefs();
     const fps = RS.fps();
     const io = S.project.inOut || {};
@@ -55,7 +123,8 @@
       RS.h('option', { value: 'io', disabled: !hasIO }, 'Sequence In/Out' + (hasIO ? ` (${RS.fmtTC(io.in, fps)} – ${RS.fmtTC(io.out, fps)})` : ' (none set)')),
       RS.h('option', { value: 'sel', disabled: !sel.length }, 'Selected clips' + (sel.length ? '' : ' (none)')));
     const lang = RS.h('select', null, LANGS.map(([v, l]) => RS.h('option', { value: v, selected: v === (p.lang || 'auto') }, l)));
-    const model = RS.h('select', null, st.models.map((m) => RS.h('option', { value: m.id, selected: m.id === (p.model || 'small') }, m.label + (m.downloaded ? '  ✓ downloaded' : '  — downloads once'))));
+    const defModel = web ? (st.models.find((m) => m.id === p.webModel) ? p.webModel : 'whisper-base') : (p.model || 'small');
+    const model = RS.h('select', null, st.models.map((m) => RS.h('option', { value: m.id, selected: m.id === defModel }, m.label + (m.downloaded ? '  ✓ downloaded' : '  — downloads once'))));
     const translate = RS.h('input', { type: 'checkbox', checked: !!p.translate });
     const replace = RS.h('input', { type: 'checkbox', checked: true });
     const row = (l, c) => RS.h('label', { class: 'form-row' }, RS.h('span', null, l), c);
@@ -73,14 +142,16 @@
         row('Transcribe', range), row('Spoken language', lang), row('Accuracy', model),
         RS.h('label', { class: 'form-row check' }, translate, RS.h('span', null, 'Translate the captions into English')),
         RS.h('label', { class: 'form-row check' }, replace, RS.h('span', null, 'Replace existing captions in this range')),
-        RS.h('p', { class: 'muted small' }, 'Runs entirely on this Mac. The model downloads once (from Hugging Face) the first time you use it. You can edit every caption afterwards in the Captions panel.')),
+        RS.h('p', { class: 'muted small' }, web
+          ? 'Runs entirely in your browser — your audio is never uploaded. The caption engine downloads once (from Hugging Face) the first time you use it, then stays in this browser. Remove it any time from Captions › Remove Caption Engine. You can edit every caption afterwards in the Captions panel.'
+          : 'Runs entirely on this Mac. The model downloads once (from Hugging Face) the first time you use it. You can edit every caption afterwards in the Captions panel.')),
       buttons: [
         { label: 'Cancel' },
         ...(notInstalled ? [{ label: 'Check again', onClick: () => { reopen = true; } }] : []),
         {
           label: 'Generate', primary: true, onClick: () => {
             if (notInstalled) { RS.toast('Install whisper.cpp first (see the instructions in this window)', 'warn'); return false; }
-            try { localStorage.setItem(PREF, JSON.stringify({ lang: lang.value, model: model.value, translate: translate.checked })); } catch { /* ignore */ }
+            try { localStorage.setItem(PREF, JSON.stringify(Object.assign(p, { lang: lang.value, translate: translate.checked }, web ? { webModel: model.value } : { model: model.value }))); } catch { /* ignore */ }
             let t0 = 0, t1 = RS.seqDuration();
             if (range.value === 'io') { t0 = io.in; t1 = io.out; }
             if (range.value === 'sel') { t0 = Math.min(...sel.map((c) => c.start)); t1 = Math.max(...sel.map(RS.clipEnd)); }
@@ -99,15 +170,16 @@
     const label = RS.h('div', { class: 'muted' }, 'Preparing…');
     let cancelled = false;
     const dlg = RS.modal({ title: 'Generating captions', sticky: true, body: RS.h('div', null, RS.h('div', { class: 'progress' }, bar), label),
-      buttons: [{ label: 'Cancel', danger: true, onClick: () => { cancelled = true; RS.native.whisperCancel(); return false; } }] });
+      buttons: [{ label: 'Cancel', danger: true, onClick: () => { cancelled = true; engine().cancel(); return false; } }] });
     const show = (pct, text) => { bar.style.width = (pct * 100).toFixed(1) + '%'; if (text) label.textContent = text; };
     const onP = (p) => {
-      if (p.phase === 'download') show(p.pct, `Downloading speech model (${o.modelLabel.split(' —')[0]})… ${Math.round(p.pct * 100)}%`);
+      if (p.phase === 'download') show(p.pct, `Downloading speech model (${o.modelLabel.split(' —')[0]})… ${Math.round(p.pct * 100)}%` + (p.total ? ` of ${(p.total / 1e6).toFixed(0)} MB` : ''));
+      if (p.phase === 'load') show(1, 'Starting the caption engine…');
       if (p.phase === 'transcribe') show(p.pct, `Transcribing speech… ${Math.round(p.pct * 100)}%`);
     };
     AC._onProgress = onP;
     try {
-      if (o.needsDownload) { show(0, 'Downloading speech model…'); await RS.native.whisperDownload(o.model); }
+      if (o.needsDownload) { show(0, 'Downloading speech model…'); await engine().download(o.model); }
       if (cancelled) throw new Error('cancelled');
       show(0, 'Preparing audio…');
       const samples = await RS.fastExport.renderMix(o.t0, o.t1, (f) => show(f, `Preparing audio… ${Math.round(f * 100)}%`));
@@ -115,7 +187,9 @@
       if (peak < 0.003) throw new Error('No sound in this range (check that audio tracks are not muted)');
       if (cancelled) throw new Error('cancelled');
       show(0, 'Transcribing speech…');
-      const segs = await RS.native.whisperTranscribe({ wav: AC.wav(samples), model: o.model, language: o.language, translate: o.translate });
+      if (!RS.native) show(0, o.needsDownload ? 'Downloading the caption engine…' : 'Starting the caption engine…');
+      const segs = await engine().transcribe({ samples, model: o.model, language: o.language, translate: o.translate });
+      if (cancelled) throw new Error('cancelled');
       const caps = AC.toCaptions(segs, o.t0).filter((c) => c.start < o.t1);
       dlg.close();
       if (!caps.length) return RS.toast('No speech was recognised in this range', 'warn', 5000);

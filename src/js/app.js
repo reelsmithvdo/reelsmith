@@ -581,6 +581,7 @@
     settingsDialog(true);
   };
   C.open = async () => {
+    if (RS.web) return RS.web.home(); // recent projects + "Open Project File"
     if (!(await confirmDiscard())) return;
     if (!RS.native) {
       const inp = RS.h('input', { type: 'file', accept: '.rsproj,.json' });
@@ -591,6 +592,14 @@
     const r = await RS.native.openProject();
     if (r) await loadProjectText(r.text, r.path);
   };
+  // Browser edition only (RS.web is undefined in the desktop app).
+  C.home = () => RS.web && RS.web.home();
+  C.openProjectFile = async () => { if (RS.web && (await confirmDiscard())) RS.web.openProjectFile(); };
+  C.downloadProject = () => RS.web && RS.web.downloadProject();
+  C.reportBug = () => RS.web && RS.web.feedback('bug');
+  C.requestFeature = () => RS.web && RS.web.feedback('feature');
+  C.fullscreen = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
+  C.removeCaptionEngine = () => RS.autoCaptions.removeEngine && RS.autoCaptions.removeEngine();
   C.save = () => saveProject(false);
   C.saveAs = () => saveProject(true);
 
@@ -609,6 +618,16 @@
   const serialize = () => JSON.stringify(Object.assign({ app: 'Reelsmith', version: 2, savedAt: new Date().toISOString(), activeSeq: S.project.activeSeq }, JSON.parse(RS.snapshot())), null, 1);
 
   async function saveProject(saveAs) {
+    if (RS.web) {
+      // Browser: projects live in this browser's storage (File › Download Project File makes a copy on disk).
+      let id;
+      try { id = await RS.web.saveProject(serialize(), saveAs); } catch (err) { RS.toast('Could not save in this browser: ' + err.message, 'error', 7000); return false; }
+      S.filePath = 'browser:' + id;
+      RS.markDirty(false);
+      updateTitle();
+      RS.toast(saveAs ? 'Saved a copy in this browser' : 'Saved in this browser', 'ok');
+      return true;
+    }
     if (!RS.native) {
       const blob = new Blob([serialize()], { type: 'application/json' });
       const a = RS.h('a', { href: URL.createObjectURL(blob), download: (S.project.name || 'project') + '.rsproj' });
@@ -721,7 +740,7 @@
   // Autosave to local storage so a crash never loses work.
   const autosave = RS.debounce(() => {
     try {
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ filePath: S.filePath, project: serialize() }));
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ filePath: S.filePath, project: serialize(), dirty: !!S.dirty }));
     } catch { /* storage full or unavailable */ }
   }, 1500);
 
@@ -826,6 +845,7 @@
     if (e.target && e.target.tagName === 'SELECT') return;
     const k = e.key;
     // In the desktop app these come from the native menu accelerators instead.
+    if (RS.web && RS.web.isHomeOpen() && !mod) return;
     if (mod && !RS.native) {
       const map = { z: e.shiftKey ? 'redo' : 'undo', y: 'redo', c: 'copy', x: 'cut', v: 'paste', d: e.shiftKey ? 'applyAudioTransition' : 'applyTransition', a: e.shiftKey ? 'deselect' : 'selectAll', k: e.shiftKey ? 'splitAll' : 'split', s: e.shiftKey ? 'saveAs' : 'save', o: 'open', i: 'import', m: 'export', t: 'addTitle', l: 'toggleLink', r: 'speedDuration' };
       const c = map[k.toLowerCase()];
@@ -990,7 +1010,8 @@
     RS.setActivePanel('timeline');
     updateTitle();
     RS.emit('history');
-    if (!window.__RS_TEST__) await maybeRestore();
+    if (RS.web) RS.web.boot(); // start screen offers recovery of unsaved work
+    else if (!window.__RS_TEST__) await maybeRestore();
   }
 
   RS.announceMatch = () => {
@@ -1002,6 +1023,6 @@
   };
   RS.on('settings-change', () => { if (RS.matchedSequence) setTimeout(RS.announceMatch, 0); });
 
-  RS.app = { loadProjectText, setProject, serialize, validateProject };
+  RS.app = { loadProjectText, setProject, serialize, validateProject, AUTOSAVE_KEY };
   window.addEventListener('DOMContentLoaded', () => { boot().catch((err) => { console.error(err); RS.toast('Startup error: ' + err.message, 'error', 10000); }); });
 })(window.RS);

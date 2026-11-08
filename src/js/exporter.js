@@ -49,9 +49,11 @@
     const preset = RS.h('select', null, PRESETS.map((p) => RS.h('option', { value: p.id }, p.label)));
     const name = RS.h('input', { type: 'text', value: (S.project.name || 'Export').replace(/[\\/:*?"<>|]/g, '_') });
     const extLbl = RS.h('span', { class: 'muted' });
-    const loc = RS.h('input', { type: 'text', readonly: true, class: 'path-input', value: dir || 'Downloads folder' });
+    const webDirect = !!(RS.web && RS.web.canSaveDirect());
+    const loc = RS.h('input', { type: 'text', readonly: true, class: 'path-input', value: dir || (webDirect ? 'You choose where to save when you click Export' : 'Your browser’s Downloads folder') });
     const browse = RS.h('button', { class: 'btn small', type: 'button' }, 'Browse…');
     browse.disabled = !RS.native;
+    if (!RS.native) browse.style.display = 'none';
     browse.addEventListener('click', async () => {
       const d = await RS.native.pickFolder(dir);
       if (d) { dir = d; loc.value = d; try { localStorage.setItem(DIR_KEY, d); } catch { /* ignore */ } suggestFreeName(); }
@@ -289,10 +291,16 @@
               }
               try { localStorage.setItem(DIR_KEY, dir); } catch { /* ignore */ }
             }
+            let webHandle = null;
+            if (webDirect) {
+              // Ask for the destination right away: the browser only allows it during the click.
+              webHandle = await RS.web.pickExportFile(fileName, supported(f));
+              if (webHandle === false) return false; // cancelled: keep the dialog open
+            }
             const { t0, t1 } = rangeOf();
             if (t1 - t0 < 1 / fps) { RS.toast('The export range is empty', 'error'); return false; }
             setTimeout(() => X.run({
-              dir, fileName, format: f, mime: supported(f),
+              dir, fileName, format: f, mime: supported(f), webHandle,
               width: even(+wIn.value || W), height: even(+hIn.value || H), quality: quality.value,
               muteMonitor: mute.checked, reveal: reveal.checked, t0, t1, engine: engineSel.value, captions: hasCaps ? capSel.value : 'none',
             }), 0);
@@ -326,10 +334,12 @@
     E.forceCaptions = !E.hideCaptions; // an explicit "burn in" choice includes captions even if hidden in the monitor
     // Subtitle sidecar written next to the video (times are relative to the start of the range).
     const writeSidecar = async (videoPath) => {
-      if (!(opts.captions === 'sidecar' || opts.captions === 'both') || !RS.native || !videoPath) return;
+      if (!(opts.captions === 'sidecar' || opts.captions === 'both') || !videoPath) return;
       const seq = S.project.seq;
       const shifted = Object.assign({}, seq, { clips: seq.clips.filter((c) => c.type === 'caption' && RS.clipEnd(c) > t0 && c.start < t1).map((c) => Object.assign({}, c, { start: Math.max(0, c.start - t0), duration: Math.min(RS.clipEnd(c), t1) - Math.max(c.start, t0) })) });
-      await RS.native.writeFile(videoPath.replace(/\.[^.\/]+$/, '.srt'), RS.captions.toSrt(shifted));
+      const srtPath = videoPath.replace(/\.[^.\/]+$/, '.srt');
+      if (RS.native) await RS.native.writeFile(srtPath, RS.captions.toSrt(shifted));
+      else if (RS.web) RS.web.downloadText(srtPath.split('/').pop(), RS.captions.toSrt(shifted), 'application/x-subrip');
     };
     let useFast = opts.engine === 'fast';
     if (useFast) {
@@ -355,6 +365,8 @@
         write: (blob) => { chain = chain.then(async () => { if (failed) return; try { await RS.native.exportChunk(r.handle, new Uint8Array(await blob.arrayBuffer())); } catch (err) { failed = err; } }); },
         finish: async (keep) => { await chain; const p = await RS.native.exportEnd(r.handle, keep && !failed); if (failed) throw failed; return p; },
       };
+    } else if (opts.webHandle) {
+      try { sink = await RS.web.fileSink(opts.webHandle); } catch (err) { RS.toast('Cannot write file: ' + err.message, 'error', 7000); return; }
     } else {
       const parts = [];
       const pieces = [];

@@ -1,12 +1,21 @@
 # Reelsmith
 
-A desktop non-linear video editor for macOS (Electron). Original code — no third-party editor code.
+A non-linear video editor for the browser and for macOS (Electron). Original code — no third-party editor code.
 
-## Run
+## Run the desktop app
 ```
 npm install     # first time only
 npm start
 ```
+A snapshot of the desktop-only version is kept in the `desktop` branch / `desktop-v1.0` tag.
+
+## Website (Cloudflare Workers)
+The same `src/` folder is the website. Every push to `main` deploys it (see `wrangler.jsonc`).
+- Static files in `src/` are served directly by Cloudflare; `worker/index.js` only handles `POST /api/feedback`.
+- `src/js/web.js` adds the browser-only parts (menu bar, start screen, saving in the browser, Report a Bug / Request a Feature) and does nothing in the desktop app.
+- Auto captions in the browser download Whisper (transformers.js + model from Hugging Face) on first use only.
+- Bug reports become GitHub issues in `FEEDBACK_REPO` (a private repo) once the `GITHUB_TOKEN` secret is set in the Cloudflare dashboard.
+- Local preview: `npx wrangler dev` then open http://localhost:8787
 
 ## Workspace
 | Panel | What it does |

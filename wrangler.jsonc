@@ -1,0 +1,18 @@
+// Cloudflare Workers config for the Reelsmith website (deployed automatically on every push to main).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "reelsmith",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-01",
+  // The editor itself: plain static files, served free and without limits by Cloudflare.
+  "assets": {
+    "directory": "./src",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    // Bug reports / feature requests become issues here. Make this repository PRIVATE
+    // (reports can contain email addresses). Add the GITHUB_TOKEN secret in the dashboard.
+    "FEEDBACK_REPO": "reelsmithvdo/reelsmith-feedback"
+  },
+  "observability": { "enabled": true }
+}

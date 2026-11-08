@@ -160,7 +160,8 @@
         duration: type === 'image' ? 0 : info.duration, width: info.width, height: info.height,
         hasAudio: type === 'audio' ? true : type === 'video',
       };
-      const rt = RS.runtime[m.id] = { url, thumb: null, peaks: null, offline: false };
+      const rt = RS.runtime[m.id] = { url, thumb: null, peaks: null, offline: false, file: src.file || null };
+      if (src.handle && RS.web) RS.web.rememberHandle(m.id, src.handle);
       if (type !== 'image') {
         const a = await analyzeAudio(src, m.duration);
         if (a) {
@@ -188,6 +189,10 @@
       if (!files || !files.length) return [];
       return M.importSources(files.filter((f) => f.ok));
     }
+    if (RS.web && RS.web.canPick()) {
+      const picked = await RS.web.pickMedia(true);
+      return picked && picked.length ? M.importSources(picked) : [];
+    }
     return new Promise((resolve) => {
       const inp = RS.h('input', { type: 'file', multiple: true, accept: 'video/*,audio/*,image/*' });
       inp.onchange = () => resolve(M.importSources([...inp.files].map((f) => ({ name: f.name, file: f, size: f.size }))));
@@ -197,9 +202,15 @@
 
   M.sourcesFromDataTransfer = (dt) => {
     const out = [];
+    // Browser: grab file-system handles synchronously (the DataTransfer is cleared after the event).
+    const handles = !RS.native && RS.web ? RS.web.handlesFromDataTransfer(dt) : [];
+    let i = 0;
     for (const f of dt.files || []) {
       const p = RS.native ? RS.native.pathForFile(f) : null;
-      out.push(p ? { name: f.name, path: p, size: f.size, file: f } : { name: f.name, file: f, size: f.size });
+      const src = p ? { name: f.name, path: p, size: f.size, file: f } : { name: f.name, file: f, size: f.size };
+      if (handles[i]) src.handle = handles[i];
+      i++;
+      out.push(src);
     }
     return out;
   };
@@ -215,6 +226,7 @@
       RS.runtime[m.id] = { url: ok ? M.pathToUrl(m.path) : null, thumb: null, peaks: null, offline: !ok };
       if (ok && m.proxyPath) RS.runtime[m.id].proxyUrl = M.pathToUrl(m.proxyPath);
     });
+    if (!RS.native && RS.web) await RS.web.reconnectMedia(list);
     RS.emit('media-change');
     for (const m of list) {
       const rt = RS.runtime[m.id];
@@ -241,6 +253,10 @@
       const files = await RS.native.importDialog();
       if (!files || !files[0] || !files[0].ok) return;
       src = files[0];
+    } else if (RS.web && RS.web.canPick()) {
+      const picked = await RS.web.pickMedia(false);
+      if (!picked || !picked.length) return;
+      src = picked[0];
     } else {
       src = await new Promise((resolve) => {
         const inp = RS.h('input', { type: 'file' });
@@ -266,6 +282,7 @@
       mm.size = src.size || 0;
     });
     RS.runtime[m.id] = { url, thumb: null, peaks: null, offline: false, file: src.file };
+    if (src.handle && RS.web) RS.web.rememberHandle(m.id, src.handle);
     RS.engine.invalidate();
     await M.refreshDerived(RS.getMedia(m.id));
   };
