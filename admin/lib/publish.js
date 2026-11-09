@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { db, bucket } from './db.js';
 import { effectiveStatus } from './posts.js';
+import { submitSitemap } from './google.js';
 
 const ROOT = () => path.resolve(process.cwd(), '..');
 const SRC = () => path.resolve(process.cwd(), process.env.SITE_SRC || '../src');
@@ -94,8 +95,26 @@ async function publishGitHubOnce() {
   return { d, result: { mode: 'github', posts: posts.length, images: added, ok: true, commit: c.sha.slice(0, 7), log: `Saved to GitHub (commit ${c.sha.slice(0, 7)}). Cloudflare is rebuilding reelsmithapp.com — live in about a minute.` } };
 }
 
+// After a publish that changed the live site, Google is told the sitemap changed — but only once Cloudflare
+// has rebuilt the site (a few minutes later), so it fetches the new one. The hourly scheduler (and any later
+// publish) does it; settings.site.sitemapPending holds the time of the change until then.
+const SITEMAP_DELAY = 3 * 60 * 1000;
+export async function maybeSubmitSitemap(d) {
+  const site = await d.collection('settings').findOne({ _id: 'site' });
+  const since = site && site.sitemapPending;
+  if (!since || Date.now() - new Date(since).getTime() < SITEMAP_DELAY) return null;
+  let r;
+  try { r = await submitSitemap(); } catch (e) { r = { ok: false, error: e.message }; }
+  const $set = { lastSitemapSubmit: { at: new Date(), ok: r.ok, error: r.error || '' } };
+  await d.collection('settings').updateOne({ _id: 'site' }, r.ok ? { $set, $unset: { sitemapPending: '' } } : { $set });
+  return r;
+}
+
 export async function publishSite() {
   const { d, result } = localSite() ? await publishLocal() : await publishGitHub();
-  await d.collection('settings').updateOne({ _id: 'site' }, { $set: { lastPublish: { at: new Date(), posts: result.posts, ok: result.ok, mode: result.mode, log: String(result.log || '').slice(-2000) } } }, { upsert: true });
+  const $set = { lastPublish: { at: new Date(), posts: result.posts, ok: result.ok, mode: result.mode, log: String(result.log || '').slice(-2000) } };
+  if (result.commit) $set.sitemapPending = new Date(); // a new commit → the live sitemap is about to change
+  await d.collection('settings').updateOne({ _id: 'site' }, { $set }, { upsert: true });
+  if (result.mode === 'github') { const s = await maybeSubmitSitemap(d); if (s) result.sitemap = s.ok ? 'submitted to Google' : 'Google: ' + s.error; }
   return result;
 }

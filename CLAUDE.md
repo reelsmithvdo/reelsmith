@@ -88,6 +88,8 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
 - **Publishing is automatic** (`admin/lib/autopublish.js`): publishing/updating/unpublishing/deleting a live post or
   renaming a used category rebuilds the site in the background; scheduled posts go live via the hourly cron.
   Settings ▸ "Rebuild site now" is only a manual fallback.
+  After a publish that commits, the sitemap is re-sent to Google Search Console automatically (≥3 min later, by
+  the next publish or the hourly cron; `settings.site.sitemapPending` / `lastSitemapSubmit`, shown in Settings).
 - The rebuild (Settings fallback button, or automatic) writes `content/posts.json` + images to `src/assets/blog/`, then runs
   `scripts/build-site.js` → static pages. Going live = commit + push. The Markdown files in content/blog and
   content/tutorials are only the fallback / original import source (`npm run import-content`).

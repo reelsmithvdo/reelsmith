@@ -107,3 +107,16 @@ export function analytics() {
     return { visitors: v[0], newVisitors: v[1], sessions: v[2], pageViews: v[3], avgSession: v[4], engagement: v[5], countries: list(countries), pages: list(pages), devices: list(devices) };
   });
 }
+
+// Tell Google the sitemap changed (Search Console "Submit sitemap"). Needs the service account to be an
+// Owner or Full user of the property. Returns { ok, status, error? }.
+export async function submitSitemap(url = (process.env.SITE_URL || 'https://reelsmithapp.com') + '/sitemap.xml') {
+  const site = encodeURIComponent(process.env.GSC_SITE);
+  const r = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${site}/sitemaps/${encodeURIComponent(url)}`, {
+    method: 'PUT', headers: { authorization: 'Bearer ' + await token('https://www.googleapis.com/auth/webmasters') },
+  });
+  if (r.ok) return { ok: true, status: r.status };
+  let error = 'Search Console error ' + r.status;
+  try { error = (await r.json()).error?.message || error; } catch { /* not JSON */ }
+  return { ok: false, status: r.status, error };
+}

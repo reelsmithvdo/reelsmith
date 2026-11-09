@@ -19,8 +19,9 @@ export default async function Settings() {
     <div className="grid g2" style={{ marginTop: 28 }}>
       <div className="card">
         <div className="card-h"><Icon name="rocket" />Website publishing</div>
-        <p className="muted" style={{ marginTop: 0 }}>Automatic: publishing, updating or deleting a post updates reelsmithapp.com within about a minute, and scheduled posts go live on their own (checked every hour). Use the button only if the site looks out of date.</p>
+        <p className="muted" style={{ marginTop: 0 }}>Automatic: publishing, updating or deleting a post updates reelsmithapp.com within about a minute, scheduled posts go live on their own (checked every hour), and the sitemap is re-sent to Google after each change. Use the button only if the site looks out of date.</p>
         <PublishButton />
+        {site && (site.sitemapPending || site.lastSitemapSubmit) && <p className={'small ' + (site.lastSitemapSubmit && !site.lastSitemapSubmit.ok && !site.sitemapPending ? 'down' : 'muted')}>Google sitemap: {site.sitemapPending ? 'will be sent to Google within the hour (after the site rebuilds)' : site.lastSitemapSubmit.ok ? 'sent ' + new Date(site.lastSitemapSubmit.at).toLocaleString() : 'not sent — ' + site.lastSitemapSubmit.error}</p>}
         {lp && <p className={'small ' + (lp.ok ? 'muted' : 'down')}>Last update: {new Date(lp.at).toLocaleString()}{lp.posts != null ? ` · ${lp.posts} live posts` : ''} · {lp.ok ? 'OK' : 'failed — ' + String(lp.log || '').slice(0, 160)}</p>}
       </div>
       <div className="card">
