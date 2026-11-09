@@ -280,7 +280,7 @@
     ]],
     ['Help', [
       ['Reelsmith Help', 'help', 'F1'], ['Keyboard Shortcuts', 'shortcuts', MOD + '/'], ['Your First Edit', 'helpFirstEdit'], ['Troubleshooting & FAQ', 'helpFaq'], sep,
-      ['Report a Bug…', 'reportBug'], ['Request a Feature…', 'requestFeature'], sep,
+      ['Report a Bug…', 'reportBug'], ['Request a Feature…', 'requestFeature'], ['Cookie Settings…', 'cookieSettings'], sep,
       ['About Reelsmith', 'about'],
     ]],
   ];

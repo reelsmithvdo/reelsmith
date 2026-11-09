@@ -8,7 +8,7 @@ module.exports = {
       await t.sleep(300);
       t.ok(await t.eval('RS.web.isHomeOpen()'), 'home did not open');
       t.eq(await t.eval(`[...document.querySelectorAll('.home-btn')].map((b) => b.textContent.trim()).slice(0, 3)`), ['New Project', 'Open From Computer', 'Start Editing']);
-      t.eq(await t.eval(`document.querySelectorAll('.home .site-links > a').length`), 7, 'website links on home');
+      t.eq(await t.eval(`document.querySelectorAll('.home .site-links > a').length`), 8, 'website links on home (7 pages + Cookie settings)');
       await t.click('.home-btn', { index: 2 });
       t.ok(!(await t.eval('RS.web.isHomeOpen()')), 'Start Editing should close home');
     },

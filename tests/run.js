@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Reelsmith test suite — like PHPUnit for this app.
 //
-//   npm test                     all specs, all modes (except slow ones)
+//   npm test                     all specs in the website modes: web, phone, tablet (except slow ones)
 //   npm test -- timeline         only specs whose file name contains "timeline"
-//   npm test -- --mode=phone     only one mode: web | phone | tablet | desktop
+//   npm test -- --mode=phone     only one mode: web | phone | tablet | desktop (desktop app: only when asked)
 //   npm test -- --slow           also run slow tests (auto captions download a ~50 MB model)
 //   npm test -- --show           show the test window instead of running hidden
 //
@@ -20,7 +20,8 @@ const fs = require('fs');
 const args = process.argv.slice(2);
 const opt = (k) => { const a = args.find((x) => x.startsWith('--' + k)); return a ? (a.includes('=') ? a.split('=')[1] : true) : null; };
 const filters = args.filter((a) => !a.startsWith('--'));
-const MODES = opt('mode') ? [opt('mode')] : ['web', 'phone', 'tablet', 'desktop'];
+// The website is the focus; the desktop app is tested only on request (--mode=desktop).
+const MODES = opt('mode') ? [opt('mode')] : ['web', 'phone', 'tablet'];
 const specDir = path.join(__dirname, 'specs');
 const specs = fs.readdirSync(specDir).filter((f) => f.endsWith('.test.js') && (!filters.length || filters.some((x) => f.includes(x))));
 if (!specs.length) { console.error('No specs match', filters.join(' ')); process.exit(1); }

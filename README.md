@@ -11,7 +11,7 @@ A snapshot of the desktop-only version is kept in the `desktop` branch / `deskto
 
 ## Tests
 ```
-npm test                      # every feature, in 4 modes: web, phone, tablet, desktop app
+npm test                      # every feature, in the website modes: web, phone, tablet (--mode=desktop for the app)
 npm test -- captions          # only spec files whose name contains "captions"
 npm test -- --mode=phone      # one mode
 npm test -- --slow            # also the slow tests (auto captions download a speech model)

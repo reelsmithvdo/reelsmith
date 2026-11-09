@@ -150,6 +150,9 @@ async function openWeb(url) {
   // Load first: attaching the debugger to the initial blank page fails when Chromium swaps processes
   // on the first navigation ("target closed"). Then emulate the device and load again.
   await win.loadURL(url);
+  // Pre-answer the cookie banner so it does not cover controls (tests/specs/15-consent tests the banner itself).
+  await win.webContents.executeJavaScript(`try { localStorage.setItem('reelsmith.consent', JSON.stringify({ v: 1, ads: false, analytics: false, at: 'test' })); } catch {} 0`);
+  if (!mobile) await win.loadURL(url);
   if (mobile) {
     await t.cdp('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });
     await t.cdp('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
@@ -212,6 +215,9 @@ app.whenReady().then(async () => {
     }
     if (spec.after) { try { await spec.after(t); } catch { /* ignore */ } }
   }
-  fs.rmSync(TMP, { recursive: true, force: true });
+  // Close windows first; Chromium may still be flushing files into the temp folder.
+  for (const w of BrowserWindow.getAllWindows()) { try { w.destroy(); } catch { /* ignore */ } }
+  await new Promise((r) => setTimeout(r, 300));
+  try { fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch { /* leftover temp files are harmless */ }
   app.exit(0);
 });

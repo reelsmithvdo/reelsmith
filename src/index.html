@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="rs-build" content="a68c692467">
+  <meta name="rs-build" content="e36471bce1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file:; media-src 'self' blob: file:; font-src 'self' data:; connect-src 'self' blob: file:">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0e1013">
@@ -19,6 +19,8 @@
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Reelsmith","url":"https://reelsmithapp.com/","applicationCategory":"MultimediaApplication","operatingSystem":"Web browser","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free video editor that runs in your browser."}</script>
   <link rel="stylesheet" href="styles.css?v=e588687862">
   <link rel="icon" href="assets/icon-64.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
 </head>
 <body>
   <div id="app">
@@ -69,7 +71,7 @@
 
     <!-- Website links (shown on the start screen of the browser edition; hidden in the desktop app) -->
     <nav id="site-links" class="site-links" hidden>
-      <a href="/features/">Features</a><a href="/tutorials/">Tutorials</a><a href="/docs/">Docs</a><a href="/blog/">Blog</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a>
+      <a href="/features/">Features</a><a href="/tutorials/">Tutorials</a><a href="/docs/">Docs</a><a href="/blog/">Blog</a><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="#" data-consent-settings>Cookie settings</a>
       <span class="credit">Made with <svg class="heart" viewBox="0 0 24 24" width="14" height="14" aria-label="love" role="img"><path fill="#e5484d" d="M12 21s-7.5-4.6-10-9.3C.4 8.6 2.3 4.5 6.2 4.5c2.2 0 3.6 1.2 4.4 2.4h2.8c.8-1.2 2.2-2.4 4.4-2.4 3.9 0 5.8 4.1 4.2 7.2C19.5 16.4 12 21 12 21z"/></svg> by <a href="https://algomatryx.com/" target="_blank" rel="noopener">Algo Matryx</a></span>
     </nav>
     <footer id="statusbar">
@@ -79,6 +81,7 @@
     </footer>
   </div>
 
+  <script src="consent.js?v=e0bb57c4be"></script>
   <script src="vendor/mediabunny.js?v=c95e664fe6"></script>
   <script src="js/util.js?v=ffe08db9e4"></script>
   <script src="js/help-content.js?v=bb77574c96"></script>
@@ -104,7 +107,7 @@
   <script src="js/library.js?v=c9e942f726"></script>
   <script src="js/exporter.js?v=6602bd2908"></script>
   <script src="js/touch.js?v=8025da78c8"></script>
-  <script src="js/web.js?v=575034e1e3"></script>
-  <script src="js/app.js?v=430b9f3a83"></script>
+  <script src="js/web.js?v=4610f8f43a"></script>
+  <script src="js/app.js?v=1dd06c998d"></script>
 </body>
 </html>

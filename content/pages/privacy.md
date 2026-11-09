@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How Reelsmith handles your data. Your videos are processed on your own computer and never uploaded.
-updated: 2026-11-08
+updated: 2026-11-09
 ---
 Reelsmith is designed so that your videos, images and audio stay on your computer. This page explains what data is involved when you use the website.
 
@@ -28,8 +28,12 @@ If you send a report, we receive what you type, the email address if you give on
 ## Hosting
 The website is served by Cloudflare. Like any web host, Cloudflare processes technical request data (IP address, browser type, time of request) to deliver and protect the site.
 
-## Cookies and advertising
-Reelsmith does not set tracking cookies today. If we add advertising or analytics in the future, this policy will be updated first and, where required, you will be asked for consent.
+## Cookies and your choices
+Reelsmith does not set tracking or advertising cookies today. The first time you visit, a small banner asks for your choice:
+- **Essential** (always on): browser storage that makes the app work — your saved projects, settings, the caption engine, and your privacy choice itself.
+- **Analytics** and **Advertising** (off unless you agree): not used yet. If we add statistics or ads in the future, they will only load with your consent, and this policy will be updated first with the providers' names.
+
+Change your choice at any time with **Cookie settings** at the bottom of every page, or in the editor under **Help ▸ Cookie Settings…**.
 
 ## Children
 Reelsmith is a general-audience tool and does not knowingly collect personal information from children.

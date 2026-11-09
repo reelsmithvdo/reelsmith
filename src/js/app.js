@@ -599,6 +599,7 @@
   C.downloadProject = () => RS.web && RS.web.downloadProject();
   C.reportBug = () => RS.web && RS.web.feedback('bug');
   C.requestFeature = () => RS.web && RS.web.feedback('feature');
+  C.cookieSettings = () => window.ReelsmithConsent && window.ReelsmithConsent.open();
   C.fullscreen = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
   C.removeCaptionEngine = () => RS.autoCaptions.removeEngine && RS.autoCaptions.removeEngine();
   C.save = () => saveProject(false);

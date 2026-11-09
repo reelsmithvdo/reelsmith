@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'none'; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'">
 <title>The workspace | Reelsmith</title>
 <meta name="description" content="The window is divided into four resizable panels. Drag the thin gaps between panels to resize them; Reelsmith remembers the layout. Top left: Effect…">
 <link rel="canonical" href="https://reelsmithapp.com/docs/workspace/">
@@ -15,7 +15,10 @@
 <meta property="og:image" content="https://reelsmithapp.com/assets/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/assets/icon-64.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/site.css">
+<script src="/consent.js" defer></script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Docs","item":"https://reelsmithapp.com/docs/"},{"@type":"ListItem","position":2,"name":"Getting Started","item":"https://reelsmithapp.com/docs/#getting-started"},{"@type":"ListItem","position":3,"name":"The workspace","item":"https://reelsmithapp.com/docs/workspace/"}]}</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"TechArticle","headline":"The workspace","description":"The window is divided into four resizable panels. Drag the thin gaps between panels to resize them; Reelsmith remembers the layout. Top left: Effect…","url":"https://reelsmithapp.com/docs/workspace/","dateModified":"2026-11-09","publisher":{"@type":"Organization","name":"Reelsmith","logo":{"@type":"ImageObject","url":"https://reelsmithapp.com/assets/icon-256.png"}}}</script>
 </head>
@@ -57,7 +60,7 @@
     <div><h4>Product</h4><a href="/">Open Editor</a><a href="/features/">Features</a><a href="/docs/browser-edition/">Browser support</a></div>
     <div><h4>Learn</h4><a href="/tutorials/">Tutorials</a><a href="/docs/">Documentation</a><a href="/docs/shortcuts/">Keyboard shortcuts</a><a href="/blog/">Blog</a></div>
     <div><h4>Support</h4><a href="/?report=bug">Report a bug</a><a href="/?report=feature">Request a feature</a><a href="/docs/faq/">FAQ</a></div>
-    <div><h4>Reelsmith</h4><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="mailto:reelsmith.vdo@gmail.com">Contact</a></div>
+    <div><h4>Reelsmith</h4><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="#" data-consent-settings>Cookie settings</a><a href="mailto:reelsmith.vdo@gmail.com">Contact</a></div>
   </div>
   <div class="wrap fine"><span>© 2026 Reelsmith</span><span class="credit">Made with <svg class="heart" viewBox="0 0 24 24" width="14" height="14" aria-label="love" role="img"><path fill="#e5484d" d="M12 21s-7.5-4.6-10-9.3C.4 8.6 2.3 4.5 6.2 4.5c2.2 0 3.6 1.2 4.4 2.4h2.8c.8-1.2 2.2-2.4 4.4-2.4 3.9 0 5.8 4.1 4.2 7.2C19.5 16.4 12 21 12 21z"/></svg> by <a href="https://algomatryx.com/" target="_blank" rel="noopener">Algo Matryx</a></span></div>
 </footer>
