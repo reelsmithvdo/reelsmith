@@ -30,7 +30,7 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
    - For visitors in the EEA/UK/Switzerland Google requires a **Google-certified CMP** — switch to AdSense's
      own "Privacy & messaging" consent message then (our banner can be removed or kept for other regions).
    - Update the Privacy Policy with the ad providers *before* ads go live (the policy promises this).
-3. Later, maybe: analytics; more tutorials and languages. (Desktop installers are dropped.)
+3. Later, maybe: more tutorials and languages. (Desktop installers are dropped.)
 
 ## Accounts and services (all on the Reelsmith email)
 | What | Where |
@@ -43,6 +43,7 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
 | YouTube | https://www.youtube.com/@ReelSmithVdo (name "Reelsmith", banner/description/links set 2026-11-09) |
 | Facebook page | https://www.facebook.com/reelsmithvdo/ |
 | Reddit | https://www.reddit.com/user/reelsmithvdo/ (the Chrome extension cannot open reddit.com — the owner edits it) |
+| Google Analytics 4 | Account "Reelsmith", property "reelsmithapp.com" (Bangladesh time, USD), web stream "Reelsmith website", **Measurement ID `G-9Y1ME99DZ9`** (Google tag GTM-N8M82SLF). Loaded by `src/consent.js` only after Analytics consent and only on reelsmithapp.com. Optional data sharing with Google turned off (only Technical support on). |
 | Bing Webmaster Tools | site added 2026-11-09 |
 | Brand images | `src/assets/brand/` (YouTube banner, Facebook cover, logos, profile picture, favicons) |
 | Google Search Console | Domain property `sc-domain:reelsmithapp.com`; service account `reelsmith-seo@reel-smith.iam.gserviceaccount.com` (key stays in ~/Downloads — **never commit it**) |

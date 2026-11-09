@@ -1,4 +1,6 @@
 // Cookie / privacy consent for reelsmithapp.com (website and editor). Not used by the desktop app.
+// Google Analytics 4 (measurement ID below) loads ONLY after the visitor allows Analytics, and only on
+// the live domain — never on test servers or previews, so reports stay clean.
 //
 // Today Reelsmith sets no tracking or advertising cookies, so nothing waits on this choice yet.
 // When ads or analytics are added, load them ONLY through ReelsmithConsent.onChange(), e.g.
@@ -11,6 +13,8 @@
   'use strict';
   if (window.native || window.ReelsmithConsent) return; // desktop app, or already loaded
   const KEY = 'reelsmith.consent';
+  const GA_ID = 'G-9Y1ME99DZ9';
+  const LIVE = /(^|\.)reelsmithapp\.com$/.test(location.hostname);
   const VERSION = 1;
   const listeners = [];
   const read = () => { try { const c = JSON.parse(localStorage.getItem(KEY) || 'null'); return c && c.v === VERSION ? c : null; } catch { return null; } };
@@ -25,13 +29,28 @@
     analytics_storage: c.analytics ? 'granted' : 'denied',
   });
 
+  // Google Analytics: added to the page the first time Analytics is allowed (basic consent mode).
+  let gaLoaded = false;
+  function loadAnalytics() {
+    if (gaLoaded || !LIVE) return;
+    gaLoaded = true;
+    gtag('js', new Date());
+    gtag('config', GA_ID);
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+    document.head.append(s);
+  }
+
   let current = read();
   if (current) pushGoogle(current);
+  if (current && current.analytics) loadAnalytics();
 
   function decide(ads, analytics) {
     current = { v: VERSION, ads: !!ads, analytics: !!analytics, at: new Date().toISOString() };
     save(current);
     pushGoogle(current);
+    if (current.analytics) loadAnalytics();
     close();
     listeners.forEach((fn) => { try { fn(current); } catch (err) { console.warn(err); } });
   }
@@ -53,7 +72,7 @@
     close();
     const c = current || { ads: false, analytics: false };
     const ess = toggle('Essential', 'Saves your projects, settings and the caption engine in this browser. Always on.', true, true);
-    const ana = toggle('Analytics', 'Anonymous statistics that help us improve Reelsmith (not used yet).', c.analytics);
+    const ana = toggle('Analytics', 'Google Analytics statistics (pages visited, device type, country) that help us improve Reelsmith.', c.analytics);
     const ads = toggle('Advertising', 'Lets ads be shown and measured. Keeps Reelsmith free (not used yet).', c.ads);
     const details = el('div', { class: 'rc-details' }, ess.row, ana.row, ads.row);
     if (!withDetails) details.hidden = true;
@@ -64,7 +83,7 @@
     box = el('div', { class: 'rc-box', role: 'dialog', 'aria-label': 'Privacy choices', 'aria-live': 'polite' },
       el('p', { class: 'rc-text' },
         el('b', null, 'Your privacy. '),
-        'Your videos never leave your computer. Reelsmith only stores what it needs to work in your browser. With your OK, we may also use cookies for statistics and ads in the future. ',
+        'Your videos never leave your computer. Reelsmith only stores what it needs to work in your browser. With your OK, we also use Google Analytics to count visits (and may show ads in the future). ',
         el('a', { href: '/privacy/' }, 'Privacy policy')),
       details,
       el('div', { class: 'rc-actions' },
@@ -88,6 +107,8 @@
 
   window.ReelsmithConsent = {
     get: () => current,                              // null until the visitor has chosen
+    analyticsLoaded: () => gaLoaded,                 // for tests
+    isLive: () => LIVE,
     open: () => open(true),                          // "Cookie settings" links call this
     onChange: (fn) => { listeners.push(fn); if (current) fn(current); },
   };

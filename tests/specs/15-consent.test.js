@@ -43,6 +43,18 @@ module.exports = {
       await t.page(() => document.querySelector('[data-consent-settings]').click());
       t.ok(await t.eval(`!!document.querySelector('.rc-box')`), 'footer link did not open the settings');
     },
+    'Google Analytics never loads off the live domain (tests, previews), even with consent': async (t) => {
+      await fresh(t);
+      await t.page(() => document.querySelectorAll('.rc-btn')[2].click()); // Accept all
+      await t.sleep(300);
+      t.eq(await t.eval(`[ReelsmithConsent.isLive(), ReelsmithConsent.analyticsLoaded(), !!document.querySelector('script[src*="googletagmanager"]')]`), [false, false, false]);
+    },
+    'without Analytics consent the GA script is never added': async (t) => {
+      await fresh(t);
+      await t.page(() => document.querySelectorAll('.rc-btn')[1].click()); // Essential only
+      t.ok(!(await t.eval(`!!document.querySelector('script[src*="googletagmanager"]')`)));
+      t.ok(/Google Analytics/.test(await t.eval(`(async () => (await (await fetch('/privacy/')).text()))()`)), 'privacy policy must name Google Analytics');
+    },
     'website pages show the banner to new visitors': async (t) => {
       await fresh(t, 'tutorials/');
       t.ok(await t.eval(`!!document.querySelector('.rc-box')`));

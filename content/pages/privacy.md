@@ -31,7 +31,8 @@ The website is served by Cloudflare. Like any web host, Cloudflare processes tec
 ## Cookies and your choices
 Reelsmith does not set tracking or advertising cookies today. The first time you visit, a small banner asks for your choice:
 - **Essential** (always on): browser storage that makes the app work — your saved projects, settings, the caption engine, and your privacy choice itself.
-- **Analytics** and **Advertising** (off unless you agree): not used yet. If we add statistics or ads in the future, they will only load with your consent, and this policy will be updated first with the providers' names.
+- **Analytics** (off unless you agree): we use **Google Analytics** to understand how many people visit, which pages they read, which country and type of device they use, and how they found Reelsmith. It sets Google Analytics cookies (`_ga`, `_ga_*`) and sends this usage data to Google. It never receives your videos, project contents, or anything you type into the editor. Google's privacy policy: https://policies.google.com/privacy
+- **Advertising** (off unless you agree): not used yet. If we show ads in the future, they will only load with your consent, and this policy will be updated first with the provider's name.
 
 Change your choice at any time with **Cookie settings** at the bottom of every page, or in the editor under **Help ▸ Cookie Settings…**.
 
