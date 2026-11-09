@@ -30,6 +30,9 @@ Volume up to 300 %, loudness normalization, EQ, compressor, noise gate and hum r
 ### Fast export
 H.264 MP4 or WebM, faster than real time, with presets for YouTube, Shorts, Reels, TikTok, Instagram and more. Vertical or landscape is picked from your footage automatically. See [[export|Exporting a video]].
 
+### GIF and audio export
+Turn any moment into a looping animated GIF, or save just the sound as AAC (.m4a) or WAV. See [[export-gif-audio|Export a GIF or audio only]], or use the [video to GIF converter](/tools/video-to-gif/) and [audio extractor](/tools/extract-audio-from-video/).
+
 ## Built for creators
 - **Library:** animated subscribe, like, comment, bell and follow buttons with transparent backgrounds — the Subscribe Button even comes with a click-and-bell sound.
 - **Animations:** In, Out and Loop animations for any clip, title or sticker.

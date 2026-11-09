@@ -548,5 +548,5 @@
     });
   }
 
-  X.busy = () => !!job;
+  X.busy = () => !!job || !!(RS.quick && RS.quick.busy);
 })(window.RS);

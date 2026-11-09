@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="rs-build" content="bfd3940e58">
+  <meta name="rs-build" content="a715432fb1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file: https://*.google-analytics.com https://*.googletagmanager.com; media-src 'self' blob: file:; font-src 'self' data:; connect-src 'self' blob: file: https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0e1013">
@@ -17,13 +17,73 @@
   <meta property="og:image" content="https://reelsmithapp.com/assets/og.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Reelsmith","url":"https://reelsmithapp.com/","applicationCategory":"MultimediaApplication","operatingSystem":"Web browser","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"Free video editor that runs in your browser."}</script>
-  <link rel="stylesheet" href="styles.css?v=e588687862">
+  <link rel="stylesheet" href="intro.css?v=6a267cdf1c">
+  <link rel="stylesheet" href="styles.css?v=2c84a3f7a7">
   <link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="assets/brand/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="site.webmanifest">
 </head>
 <body>
+  <!-- First-visit introduction (like photopea.com): real content for new visitors and search engines.
+       js/intro.js removes it at once for returning visitors, deep links (?…/#…) and the desktop app. -->
+  <div id="intro" class="intro" role="dialog" aria-modal="true" aria-labelledby="intro-h1">
+    <header class="intro-bar">
+      <span class="intro-logo"><img src="assets/icon-64.png" alt="" width="28" height="28">Reelsmith</span>
+      <nav aria-label="Website"><a href="/features/">Features</a><a href="/tools/">Tools</a><a href="/tutorials/">Tutorials</a><a href="/docs/">Docs</a><a href="/blog/">Blog</a></nav>
+      <button class="intro-btn small" data-start>Open editor</button>
+    </header>
+    <main class="intro-main">
+      <section class="intro-hero">
+        <h1 id="intro-h1">Free Online Video Editor</h1>
+        <p class="intro-lead">Cut, caption and export videos right in your browser. Nothing to install, and your files are never uploaded.</p>
+        <button class="intro-btn big" data-start>Start editing</button>
+        <img class="intro-shot" src="assets/shots/editor.jpg" width="1500" height="888" alt="The Reelsmith editor: timeline with video, audio and caption tracks, Program monitor and Effect Controls" fetchpriority="high">
+      </section>
+      <section class="intro-pair">
+        <div>
+          <h2>Your files stay on your device</h2>
+          <p>Videos open from your computer or phone and are edited there. Even auto captions run on your device.</p>
+          <h2>A real timeline</h2>
+          <p>Multiple video and audio tracks, trimming, razor cuts, keyframes, nested sequences and multi-camera editing.</p>
+          <h2>Free, no watermark</h2>
+          <p>Export MP4 or WebM up to 4K. No account, no sign-up.</p>
+        </div>
+        <img src="assets/shots/captions.jpg" width="1500" height="888" alt="Auto captions generated on the device and listed in the Captions panel" loading="lazy">
+      </section>
+      <section class="intro-pair flip">
+        <div>
+          <h2>Made for Shorts, Reels and TikTok</h2>
+          <p>Vertical 9:16 sequences, Background Blur Fill and export presets for every platform.</p>
+          <h2>Titles, effects and transitions</h2>
+          <p>Animated title templates, creative effects like Zoom Punch and VHS, color filters, stickers and sound effects.</p>
+          <h2>Works on phones and tablets</h2>
+          <p>The same editor adapts to touch screens, with gestures and bottom-sheet panels.</p>
+        </div>
+        <img src="assets/shots/vertical.jpg" width="1500" height="888" alt="Editing a vertical 9:16 video with a title and captions" loading="lazy">
+      </section>
+      <section class="intro-tools">
+        <h2>Popular free tools</h2>
+        <ul>
+          <li><a href="/tools/add-subtitles-to-video/">Add subtitles to video</a></li>
+          <li><a href="/tools/trim-video/">Trim a video</a></li>
+          <li><a href="/tools/merge-videos/">Merge videos</a></li>
+          <li><a href="/tools/resize-video/">Resize for TikTok and Reels</a></li>
+          <li><a href="/tools/add-music-to-video/">Add music to video</a></li>
+          <li><a href="/tools/add-text-to-video/">Add text to video</a></li>
+          <li><a href="/tools/compress-video/">Compress a video</a></li>
+          <li><a href="/tools/speed-up-video/">Speed up or slow down</a></li>
+          <li><a href="/tools/video-to-gif/">Video to GIF</a></li>
+          <li><a href="/tools/extract-audio-from-video/">Extract audio from video</a></li>
+          <li><a href="/tutorials/remove-video-background/">Remove a video background</a></li>
+        </ul>
+        <p class="intro-more"><a href="/tools/">All tools</a> · <a href="/tutorials/">Tutorials</a></p>
+        <button class="intro-btn big" data-start>Start editing</button>
+      </section>
+    </main>
+    <footer class="intro-foot"><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><span>Made by <a href="https://algomatryx.com/" target="_blank" rel="noopener">Algo Matryx</a></span></footer>
+  </div>
+  <script src="js/intro.js?v=f01e528552"></script>
   <div id="app">
     <header id="topbar">
       <div class="brand"><span class="brand-mark"></span>Reelsmith</div>
@@ -85,7 +145,7 @@
   <script src="consent.js?v=37fb3b906a"></script>
   <script src="vendor/mediabunny.js?v=c95e664fe6"></script>
   <script src="js/util.js?v=ffe08db9e4"></script>
-  <script src="js/help-content.js?v=bb77574c96"></script>
+  <script src="js/help-content.js?v=a766a3663c"></script>
   <script src="js/help.js?v=fc8e7a8792"></script>
   <script src="js/state.js?v=50de2c8782"></script>
   <script src="js/media.js?v=e52a3ac73a"></script>
@@ -96,7 +156,7 @@
   <script src="js/panels.js?v=9cff0ea78f"></script>
   <script src="js/program.js?v=9b3d705ae3"></script>
   <script src="js/decode.js?v=a91fceda08"></script>
-  <script src="js/fastexport.js?v=24aa31e350"></script>
+  <script src="js/fastexport.js?v=ea5a1d6cb7"></script>
   <script src="js/scopes.js?v=c303359bcd"></script>
   <script src="js/tracking.js?v=4aefb63113"></script>
   <script src="js/audiotools.js?v=cee14f03a2"></script>
@@ -104,11 +164,13 @@
   <script src="js/proxies.js?v=cf62e7c1fd"></script>
   <script src="js/autocaptions.js?v=223147bc26"></script>
   <script src="js/bgremove.js?v=abb93742b3"></script>
-  <script src="js/creative.js?v=28fd68cc79"></script>
+  <script src="js/creative.js?v=44a0ad3bca"></script>
   <script src="js/library.js?v=c9e942f726"></script>
-  <script src="js/exporter.js?v=6602bd2908"></script>
-  <script src="js/touch.js?v=8025da78c8"></script>
-  <script src="js/web.js?v=4610f8f43a"></script>
-  <script src="js/app.js?v=1dd06c998d"></script>
+  <script src="js/exporter.js?v=cebdc8b7ce"></script>
+  <script src="js/quicktools.js?v=be58d255a8"></script>
+  <script src="js/templates.js?v=233fba9131"></script>
+  <script src="js/touch.js?v=09f6792c3d"></script>
+  <script src="js/web.js?v=2d13cf4d29"></script>
+  <script src="js/app.js?v=2c96791931"></script>
 </body>
 </html>

@@ -576,6 +576,8 @@
 
   // --- files ---
   C.import = () => RS.media.importDialog();
+  C.exportGif = () => RS.quick.gifDialog();
+  C.exportAudio = () => RS.quick.audioDialog();
   C.export = () => RS.exporter.dialog();
   C.new = async () => {
     if (!(await confirmDiscard())) return;

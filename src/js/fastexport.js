@@ -218,18 +218,7 @@
           await asrc.add(await renderAudio(nextAudio, end));
           nextAudio = end;
         }
-        E().frameOverride.clear();
-        for (const p of byFrame.get(i) || []) {
-          const mt = p.times[p.cursor++];
-          if (p.mode === 'decoder') {
-            const r = await p.iter.next();
-            const sample = r.done ? null : r.value;
-            if (sample) { open.push(sample); E().frameOverride.set(p.key, { src: sample, w: p.w, h: p.h, fit: true, sample: true }); }
-          } else {
-            const el = await p.el.at(mt);
-            E().frameOverride.set(p.key, { src: el, w: el.videoWidth || p.w, h: el.videoHeight || p.h, fit: true });
-          }
-        }
+        await setFrame(byFrame, i, open);
         E().render(t);
         await vsrc.add(i / fps, 1 / fps);
         for (const smp of open) smp.close();
@@ -246,9 +235,74 @@
       try { await output.cancel(); } catch { /* ignore */ }
       throw err;
     } finally {
-      E().frameOverride = null;
-      for (const p of plan) { try { if (p.iter) await p.iter.return(); } catch { /* ignore */ } if (p.input) p.input.dispose(); if (p.el) p.el.close(); }
-      for (const a of audioSources.values()) if (a.input) a.input.dispose();
+      await closePlan(plan);
+    }
+  };
+
+  // Put the source frames for output frame i into E().frameOverride (samples to close are pushed to `open`).
+  async function setFrame(byFrame, i, open) {
+    E().frameOverride.clear();
+    for (const p of byFrame.get(i) || []) {
+      const mt = p.times[p.cursor++];
+      if (p.mode === 'decoder') {
+        const r = await p.iter.next();
+        const sample = r.done ? null : r.value;
+        if (sample) { open.push(sample); E().frameOverride.set(p.key, { src: sample, w: p.w, h: p.h, fit: true, sample: true }); }
+      } else {
+        const el = await p.el.at(mt);
+        E().frameOverride.set(p.key, { src: el, w: el.videoWidth || p.w, h: el.videoHeight || p.h, fit: true });
+      }
+    }
+  }
+  async function closePlan(plan) {
+    E().frameOverride = null;
+    for (const p of plan) { try { if (p.iter) await p.iter.return(); } catch { /* ignore */ } if (p.input) p.input.dispose(); if (p.el) p.el.close(); }
+    for (const a of audioSources.values()) if (a.input) a.input.dispose();
+    audioSources.clear();
+    RS.decode.closeAll();
+  }
+
+  // Render [t0, t1) at any frame rate and size, frame by frame, for exports that are not MP4/WebM (GIF).
+  // onFrame(canvas, index, time) is awaited before the next frame is drawn.
+  F.frames = async ({ t0, t1, fps, width, height }, onFrame, onProgress = () => {}, isCancelled = () => false) => {
+    const n = Math.max(1, Math.round((t1 - t0) * fps));
+    const P = S.project;
+    const plan = planVideo(t0, n, fps);
+    await openProviders(plan);
+    const byFrame = new Map();
+    for (const p of plan) for (const f of p.frames) { if (!byFrame.has(f)) byFrame.set(f, []); byFrame.get(f).push(p); }
+    E().setExportSize(width !== P.settings.width || height !== P.settings.height ? { w: width, h: height } : null);
+    E().frameOverride = new Map();
+    let open = [];
+    try {
+      for (let i = 0; i < n; i++) {
+        if (isCancelled()) throw new Error('cancelled');
+        const t = t0 + i / fps;
+        await setFrame(byFrame, i, open);
+        E().render(t);
+        await onFrame(E().canvas, i, t);
+        for (const smp of open) smp.close();
+        open = [];
+        onProgress((i + 1) / n, t);
+      }
+    } finally {
+      for (const smp of open) smp.close();
+      E().setExportSize(null);
+      await closePlan(plan);
+    }
+    return n;
+  };
+
+  // The sequence's audio mix for [a, b) as 48 kHz stereo, delivered in 10-second AudioBuffers.
+  F.mixAudio = async (a, b, onSegment, isCancelled = () => false) => {
+    try {
+      for (let s = a; s < b - 1e-6; s += SEG) {
+        if (isCancelled()) throw new Error('cancelled');
+        const e = Math.min(b, s + SEG);
+        await onSegment(await renderAudio(s, e), (e - a) / (b - a));
+      }
+    } finally {
+      for (const x of audioSources.values()) if (x.input) x.input.dispose();
       audioSources.clear();
       RS.decode.closeAll();
     }

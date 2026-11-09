@@ -38,7 +38,7 @@
   document.addEventListener('pointerdown', (e) => {
     if (e.pointerType !== 'touch' || !e.isPrimary) return;
     const t = e.target;
-    if (t.closest('input, textarea, select, [contenteditable]')) return;
+    if (t.closest('input, textarea, select, [contenteditable], #intro, .tool-guide')) return; // web-page overlays have no context menu
     const x = e.clientX, y = e.clientY;
     clearTimeout(lp && lp.timer);
     const fire = () => {

@@ -56,6 +56,13 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
   - `src/js/touch.js` — touch + phone layout (bottom-sheet panels, long-press, gestures).
   - `src/consent.js` — cookie/privacy banner + Google Consent Mode v2 defaults.
   - `src/js/help-content.js` — Help Center articles; `{{web:…|desktop:…}}` picks wording per edition.
+  - `src/js/intro.js` + `#intro` in `index.html` — Photopea-style first-visit landing (real content for Google);
+    one click opens the editor and is remembered; `?…`/`#…` links skip it.
+  - `src/js/web.js` `W.TOOLS` — task guides opened by `/?tool=<id>` from the tool pages; `src/js/templates.js` —
+    project templates on the start screen; `src/js/quicktools.js` — Export as GIF / Export Audio (M4A, WAV).
+- `content/tools/*.md` — tool pages (`/tools/<slug>/`); front matter `tool:` must be an id in `W.TOOLS` (build checks).
+- `scripts/shoot.js` — real editor screenshots for the site: `npx electron scripts/shoot.js <scene>` (scenes in
+  `scripts/shots/scenes.js`; `preview` scenes go to a temp folder).
 - `content/` — website text: `pages/`, `tutorials/`, `blog/` (Markdown with front matter).
 - `scripts/build-site.js` — builds `/features/`, `/docs/…`, `/tutorials/…`, `/blog/…`, legal pages,
   `sitemap.xml`, `robots.txt` into `src/`, and fingerprints scripts (`?v=hash`).
@@ -99,6 +106,10 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
   `/admin*` and `/api/*` are in `run_worker_first` (wrangler.jsonc) — without it browser visits get the 404 page.
   One GitHub token `reelsmith-admin-publish` (Contents on reelsmith) is on reelsmith-admin; `reelsmith-feedback`
   (Issues on reelsmith-feedback) is on the website Worker. Test live with `-H 'Sec-Fetch-Mode: navigate'`.
+- **Local work uses a separate database:** `admin/.env.local` has `MONGODB_DB=reelsmith_dev` (live = `reelsmith`).
+  The live hourly publish reads `reelsmith`, so local edits never go live by themselves. Before pushing locally
+  prepared content: `cd admin && node --env-file=.env.local scripts/promote-dev.mjs --yes` (copies posts,
+  categories, media to live), then commit + push.
 - On Cloudflare each request opens its own MongoDB connection (Workers can't share sockets across requests).
 - Local Cloudflare test: `cd admin && npm run cf:build && npx wrangler dev` (secrets in `admin/.dev.vars`).
 

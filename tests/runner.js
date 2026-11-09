@@ -151,7 +151,7 @@ async function openWeb(url) {
   // on the first navigation ("target closed"). Then emulate the device and load again.
   await win.loadURL(url);
   // Pre-answer the cookie banner so it does not cover controls (tests/specs/15-consent tests the banner itself).
-  await win.webContents.executeJavaScript(`try { localStorage.setItem('reelsmith.consent', JSON.stringify({ v: 1, ads: false, analytics: false, at: 'test' })); } catch {} 0`);
+  await win.webContents.executeJavaScript(`try { localStorage.setItem('reelsmith.consent', JSON.stringify({ v: 1, ads: false, analytics: false, at: 'test' })); localStorage.setItem('reelsmith.intro', 'seen'); } catch {} 0`);
   if (!mobile) await win.loadURL(url);
   if (mobile) {
     await t.cdp('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });

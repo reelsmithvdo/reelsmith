@@ -6,8 +6,8 @@
 //    rebuilds and deploys the website from that commit (wrangler.jsonc build command) in about a minute.
 import fs from 'fs';
 import path from 'path';
-import { db, bucket } from './db';
-import { effectiveStatus } from './posts';
+import { db, bucket } from './db.js';
+import { effectiveStatus } from './posts.js';
 
 const ROOT = () => path.resolve(process.cwd(), '..');
 const SRC = () => path.resolve(process.cwd(), process.env.SITE_SRC || '../src');

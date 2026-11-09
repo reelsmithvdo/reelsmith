@@ -1,9 +1,9 @@
 // Posts and categories in MongoDB.
 // status: 'draft' | 'published'. A published post with a future publishAt is "scheduled".
 import sanitizeHtml from 'sanitize-html';
-import { db, oid } from './db';
-import { slugify } from './seo';
-import { seoReport } from './score';
+import { db, oid } from './db.js';
+import { slugify } from './seo.js';
+import { seoReport } from './score.js';
 
 export const SECTIONS = { blog: 'Blog', tutorial: 'Tutorials' };
 export const effectiveStatus = (p, now = Date.now()) => (p.status === 'published' ? (new Date(p.publishAt).getTime() > now ? 'scheduled' : 'published') : 'draft');

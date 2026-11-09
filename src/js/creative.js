@@ -175,6 +175,15 @@
     mirror: { name: 'Mirror', def: { amount: 100 } },
     split3: { name: 'Split Screen ×3', def: { amount: 100 } },
     vignettePulse: { name: 'Heartbeat Vignette', def: { amount: 60 } },
+    kaleido: { name: 'Kaleidoscope', def: { amount: 100 } },
+    zoomblur: { name: 'Zoom Blur', def: { amount: 50 } },
+    duotone: { name: 'Duotone Pop', def: { amount: 100 } },
+    oldfilm: { name: 'Old Film', def: { amount: 70 } },
+    strobe: { name: 'Strobe Flash', def: { amount: 60 } },
+    spotlight: { name: 'Spotlight', def: { amount: 60 } },
+    snow: { name: 'Snowfall', def: { amount: 50 } },
+    sparkle: { name: 'Sparkles', def: { amount: 50 } },
+    rain: { name: 'Rain', def: { amount: 50 } },
   };
   const amt = (v) => ((v && v.amount) ?? 50) / 100;
 
@@ -189,7 +198,7 @@
     return cv;
   }
 
-  const SOURCE_FX = ['rgb', 'glitch', 'vhs', 'glow', 'mirror', 'split3'];
+  const SOURCE_FX = ['rgb', 'glitch', 'vhs', 'glow', 'mirror', 'split3', 'kaleido', 'duotone', 'oldfilm', 'zoomblur'];
   CR.stylize = (c, s, key, l) => {
     const V = c.vfx;
     if (!SOURCE_FX.some((k) => V[k])) return s;
@@ -204,6 +213,48 @@
       for (let i = 0; i < 3; i++) g.drawImage(s.src, s.w / 2 - sw / 2, 0, sw, s.h, i * tw, 0, tw, h);
     } else g.drawImage(s.src, 0, 0, w, h);
     if (V.mirror) { g.save(); g.translate(w, 0); g.scale(-1, 1); g.drawImage(cv, 0, 0, w / 2, h, 0, 0, w / 2, h); g.restore(); }
+    if (V.kaleido) {
+      // Four-way mirror of the top-left quarter, slowly zooming, for a kaleidoscope look.
+      const tmp = RS.engine.workCanvas(key + '#k', w, h), tg = tmp.getContext('2d');
+      tg.setTransform(1, 0, 0, 1, 0, 0); tg.clearRect(0, 0, w, h); tg.drawImage(cv, 0, 0);
+      const z = 1 + 0.08 * Math.sin(l * 0.8) * amt(V.kaleido), qw = w / 2 / z, qh = h / 2 / z, sx = (w / 2 - qw) / 2, sy = (h / 2 - qh) / 2;
+      g.clearRect(0, 0, w, h);
+      for (const [fx, fy] of [[1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+        g.save(); g.translate(w / 2, h / 2); g.scale(fx, fy); g.drawImage(tmp, sx, sy, qw, qh, -w / 2, -h / 2, w / 2, h / 2); g.restore();
+      }
+    }
+    if (V.duotone || V.oldfilm) {
+      const tmp = RS.engine.workCanvas(key + '#tone', w, h), tg = tmp.getContext('2d');
+      tg.setTransform(1, 0, 0, 1, 0, 0); tg.globalCompositeOperation = 'source-over'; tg.globalAlpha = 1; tg.clearRect(0, 0, w, h);
+      if (V.duotone) {
+        // Shadows take the dark colour (screen), highlights the bright one (multiply), blended by amount.
+        tg.filter = 'grayscale(1) contrast(1.7) brightness(1.05)'; tg.drawImage(cv, 0, 0); tg.filter = 'none';
+        tg.globalCompositeOperation = 'multiply'; tg.fillStyle = '#ffd23f'; tg.fillRect(0, 0, w, h);
+        tg.globalCompositeOperation = 'screen'; tg.fillStyle = '#6a14c8'; tg.fillRect(0, 0, w, h);
+        tg.globalCompositeOperation = 'destination-in'; tg.drawImage(cv, 0, 0);
+        g.globalAlpha = amt(V.duotone);
+      } else {
+        const flick = 0.92 + 0.08 * hash(Math.floor(l * 18));
+        tg.filter = `sepia(${0.5 + 0.4 * amt(V.oldfilm)}) contrast(1.15) brightness(${flick})`; tg.drawImage(cv, 0, 0); tg.filter = 'none';
+        // a gentle frame jitter, like a worn projector
+        g.globalAlpha = 1;
+        const jy = (hash(Math.floor(l * 12) * 3.7) - 0.5) * h * 0.006 * amt(V.oldfilm);
+        g.clearRect(0, 0, w, h); g.drawImage(tmp, 0, jy); tg.clearRect(0, 0, w, h);
+      }
+      if (V.duotone) { g.drawImage(tmp, 0, 0); g.globalAlpha = 1; }
+    }
+    if (V.zoomblur) {
+      // Radial zoom blur: stacked, slightly larger copies around the centre.
+      const k = amt(V.zoomblur), base = RS.engine.workCanvas(key + '#zb', w, h), bg = base.getContext('2d');
+      bg.setTransform(1, 0, 0, 1, 0, 0); bg.clearRect(0, 0, w, h); bg.drawImage(cv, 0, 0);
+      const n = 6;
+      for (let i = 1; i <= n; i++) {
+        const sc = 1 + (i / n) * 0.12 * k;
+        g.globalAlpha = 0.5 / i;
+        g.drawImage(base, (w - w * sc) / 2, (h - h * sc) / 2, w * sc, h * sc);
+      }
+      g.globalAlpha = 1;
+    }
     const frame = Math.floor(l * 24);
     if (V.rgb || V.vhs) {
       const off = Math.max(1, Math.round(w * 0.012 * (V.rgb ? amt(V.rgb) * 2 : amt(V.vhs) * 0.6)));
@@ -298,6 +349,65 @@
       const g = ctx.createRadialGradient(W / 2, H / 2, r * (0.55 - 0.15 * beat), W / 2, H / 2, r);
       g.addColorStop(0, 'rgba(120,0,0,0)'); g.addColorStop(1, `rgba(120,0,0,${(0.5 + 0.4 * beat) * amt(V.vignettePulse) * 1.5})`);
       ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+    }
+    if (V.oldfilm) {
+      const k = amt(V.oldfilm), f = Math.floor(l * 18);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(30,20,10,0.55)'; ctx.lineWidth = Math.max(1, W / 900);
+      for (let i = 0; i < 1 + Math.round(3 * k); i++) if (hash(f * 7 + i) < 0.6) { const x = hash(f * 3 + i * 11) * W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + (hash(i + f) - 0.5) * W * 0.01, H); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(25,15,5,0.6)';
+      for (let i = 0; i < Math.round(14 * k); i++) { const r = (0.5 + hash(f * 5 + i) * 2) * H / 540; ctx.beginPath(); ctx.arc(hash(f * 13 + i) * W, hash(f * 17 + i) * H, r, 0, 7); ctx.fill(); }
+      const r = Math.hypot(W, H) / 2, vg = ctx.createRadialGradient(W / 2, H / 2, r * 0.45, W / 2, H / 2, r);
+      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, `rgba(20,10,0,${0.6 * k})`);
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+    if (V.strobe) {
+      // A short white flash four times a second.
+      const ph = (l * 4) % 1;
+      if (ph < 0.22) { ctx.save(); ctx.globalAlpha = (1 - ph / 0.22) * 0.85 * amt(V.strobe); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+    }
+    if (V.spotlight) {
+      const k = amt(V.spotlight), x = W * (0.5 + 0.18 * Math.sin(l * 0.6)), y = H * (0.45 + 0.08 * Math.cos(l * 0.45));
+      const g = ctx.createRadialGradient(x, y, Math.min(W, H) * 0.18, x, y, Math.max(W, H) * 0.6);
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, `rgba(0,0,0,${0.85 * k})`);
+      ctx.save(); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+    }
+    if (V.snow || V.sparkle || V.rain) {
+      // Deterministic particles: position depends only on time, so previews and exports match.
+      ctx.save();
+      const S0 = H / 1080;
+      if (V.snow) {
+        const n = Math.round(60 + 160 * amt(V.snow));
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        for (let i = 0; i < n; i++) {
+          const sp = 0.05 + hash(i * 1.7) * 0.12, y = ((hash(i * 3.3) + l * sp) % 1) * (H + 20) - 10;
+          const x = (hash(i * 9.1) * W + Math.sin(l * (0.6 + hash(i)) + i) * 20 * S0 + W) % W, r = (2.5 + hash(i * 5.5) * 5.5) * S0;
+          ctx.globalAlpha = 0.5 + hash(i * 2.2) * 0.5; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+        }
+      }
+      if (V.rain) {
+        const n = Math.round(80 + 220 * amt(V.rain));
+        ctx.strokeStyle = 'rgba(205,220,255,0.8)'; ctx.lineWidth = Math.max(1.2, 2.2 * S0);
+        for (let i = 0; i < n; i++) {
+          const len = (25 + hash(i * 4.4) * 35) * S0, y = ((hash(i * 7.7) + l * (1.6 + hash(i) * 0.8)) % 1) * (H + len) - len, x = (hash(i * 2.9) * W + y * 0.12) % W;
+          ctx.globalAlpha = 0.55 + hash(i * 6.1) * 0.45; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len * 0.12, y + len); ctx.stroke();
+        }
+      }
+      if (V.sparkle) {
+        const n = Math.round(14 + 40 * amt(V.sparkle));
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < n; i++) {
+          const life = 1.2 + hash(i * 8.8), ph = ((l + hash(i * 3.1) * life) % life) / life, a = Math.sin(ph * Math.PI);
+          const cyc = Math.floor((l + hash(i * 3.1) * life) / life), x = hash(i * 5.3 + cyc * 1.7) * W, y = hash(i * 6.7 + cyc * 2.3) * H, r = (6 + hash(i * 1.1) * 14) * S0 * a;
+          if (r < 0.5) continue;
+          const gr = ctx.createRadialGradient(x, y, 0, x, y, r * 2.2); gr.addColorStop(0, `rgba(255,245,210,${a})`); gr.addColorStop(1, 'rgba(255,220,150,0)');
+          ctx.fillStyle = gr; ctx.fillRect(x - r * 2.2, y - r * 2.2, r * 4.4, r * 4.4);
+          ctx.globalAlpha = a; ctx.fillStyle = '#fffbe8';
+          ctx.fillRect(x - r, y - 0.6 * S0, r * 2, 1.2 * S0); ctx.fillRect(x - 0.6 * S0, y - r, 1.2 * S0, r * 2); ctx.globalAlpha = 1;
+        }
+      }
+      ctx.restore();
     }
     if (V.flash && l < 0.45) {
       ctx.save(); ctx.globalAlpha = Math.pow(1 - l / 0.45, 2) * amt(V.flash); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); ctx.restore();
@@ -454,11 +564,12 @@
         const start = RS.frameRound(t + (p.offset || 0), RS.fps());
         const c = RS.makeClip({ type: 'text', trackId: tr.id, start, duration: p.dur || total, props: { x: p.x || 0, y: p.y || 0 } });
         CR.applyTextStyle(c, styleOf(p.style) || {});
-        c.text.content = p.content; c.text.size = Math.max(8, Math.round(p.size * H / 1080)); // sizes are designed for 1080p
+        // Sizes are designed for 1080p landscape; narrow frames (9:16, 1:1) scale by width so titles still fit.
+        c.text.content = p.content; c.text.size = Math.max(8, Math.round(p.size * Math.min(H / 1080, W / 1200)));
         if (p.align) c.text.align = p.align;
         if (p.bgColor) c.text.bgColor = p.bgColor;
         if (p.bgOpacity != null) c.text.bgOpacity = p.bgOpacity;
-        if (p.spacing != null) c.text.spacing = Math.round(p.spacing * H / 1080);
+        if (p.spacing != null) c.text.spacing = Math.round(p.spacing * Math.min(H / 1080, W / 1200));
         for (const k of ['extrude', 'offShadow']) if (c.text[k]) c.text[k] = Object.assign({}, c.text[k]); // percentages of size: no scaling needed
         if (p.anim) c.anim = JSON.parse(JSON.stringify(p.anim));
         S.project.clips.push(c);

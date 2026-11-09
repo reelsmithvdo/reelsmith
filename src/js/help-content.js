@@ -617,6 +617,23 @@ The summary shows the resulting size, range and estimated file size. If the outp
 Click **Export**. A progress window shows the percentage and speed; **Cancel export** stops and removes the partial file.`,
     },
     {
+      id: 'export-gif-audio', cat: 'Exporting', title: 'Export a GIF or audio only',
+      body: `## Animated GIF
+Choose **File ▸ Export as GIF…**. Pick the **Range** (the whole sequence or your In/Out points), the **Size** (320–800 px wide) and the **Frame rate** (10–25 fps), then click **Export GIF**.
+- GIFs have no sound and up to 256 colours per frame, so they suit short loops, reactions and screen demos. Keep them short: above about 20 seconds, an MP4 is much smaller.
+- Captions and titles that are visible in the Program monitor are included.
+- Frames that don't change are merged, so still parts cost almost nothing.
+
+## Audio only
+Choose **File ▸ Export Audio…** to save the sound of the sequence — every unmuted audio track with its volume, effects and fades:
+- **AAC (.m4a)** — small and plays everywhere (offered when your browser can encode AAC).
+- **WAV (.wav)** — uncompressed, for further editing in an audio app.
+
+Muted tracks are left out. To export one part, set In and Out points with \`I\` and \`O\` and choose **Sequence In/Out**.
+
+Both run on your device{{web:, so nothing is uploaded|desktop:}}. See also [[export|Exporting a video]].`,
+    },
+    {
       id: 'export-engines', cat: 'Exporting', title: 'Fast vs. real-time export',
       body: `## Fast — frame-accurate (default)
 Each output frame is built from the exact source frames and encoded directly, and audio is mixed offline. It is usually many times faster than real time and gives the exact duration.
@@ -702,7 +719,7 @@ Each clip has one In, one Out and one Loop animation; choosing another replaces 
     {
       id: 'creative-effects', cat: 'Effects & Transitions', title: 'Creative effects, filters, titles and stickers',
       body: `## Creative Effects
-Camera Shake, Zoom Punch (beat), RGB Split, Glitch, VHS Retro, Film Grain, Dreamy Glow, Cinematic Bars, Light Leak, Flash at Start, **Background Blur Fill** (fills empty space around vertical or small video with a blurred copy), Mirror, Split Screen ×3 and Heartbeat Vignette. Set each one's strength in **Effect Controls ▸ Creative Effects**.
+Camera Shake, Zoom Punch (beat), RGB Split, Glitch, VHS Retro, Film Grain, Dreamy Glow, Cinematic Bars, Light Leak, Flash at Start, **Background Blur Fill** (fills empty space around vertical or small video with a blurred copy), Mirror, Split Screen ×3, Heartbeat Vignette, **Kaleidoscope**, **Zoom Blur**, **Duotone Pop**, **Old Film** (sepia, scratches, dust and flicker), **Strobe Flash**, **Spotlight**, and the particle effects **Snowfall**, **Sparkles** and **Rain**. Set each one's strength in **Effect Controls ▸ Creative Effects**.
 
 **Funny:** Zoom Punch, Camera Shake, Glitch, Stamp/Pop animations, stickers and sound effects. **Elegant:** Dreamy Glow, Light Leak, Film Grain, Cinematic Bars, Fade Up titles, Elegant Serif text. **Professional:** Lower Third, Background Blur Fill, Cinematic filter, Auto Duck.
 

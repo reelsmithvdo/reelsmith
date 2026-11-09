@@ -12,7 +12,7 @@ const SRC = path.join(ROOT, 'src');
 const CONTENT = path.join(ROOT, 'content');
 const ORIGIN = 'https://reelsmithapp.com';
 const TODAY = new Date().toISOString().slice(0, 10);
-const GENERATED = ['features', 'docs', 'tutorials', 'blog', 'about', 'privacy', 'terms'];
+const GENERATED = ['features', 'tools', 'docs', 'tutorials', 'blog', 'about', 'privacy', 'terms'];
 
 // ---------------------------------------------------------------- help content
 const ctx = { globalThis: {} }; ctx.window = ctx.globalThis; vm.createContext(ctx);
@@ -95,7 +95,7 @@ const posts = (fromDb ? fromDb.filter((p) => p.section === 'blog') : readMd('blo
 const pages = Object.fromEntries(readMd('pages').map((p) => [p.slug, p]));
 
 // ---------------------------------------------------------------- layout
-const NAV = [['Features', '/features/'], ['Tutorials', '/tutorials/'], ['Docs', '/docs/'], ['Blog', '/blog/']];
+const NAV = [['Features', '/features/'], ['Tools', '/tools/'], ['Tutorials', '/tutorials/'], ['Docs', '/docs/'], ['Blog', '/blog/']];
 function layout({ title, description, urlPath, body, section, jsonld = [], ogType = 'website', image }) {
   const url = ORIGIN + urlPath;
   const fullTitle = urlPath === '/features/' ? title : `${title} | Reelsmith`;
@@ -141,7 +141,7 @@ ${body}
   <div class="wrap cols">
     <div><a class="logo" href="/features/"><img src="/assets/icon-64.png" alt="" width="24" height="24">Reelsmith</a><p>Free video editor in your browser. Your files stay on your computer.</p></div>
     <div><h4>Product</h4><a href="/">Open Editor</a><a href="/features/">Features</a><a href="/docs/browser-edition/">Browser support</a></div>
-    <div><h4>Learn</h4><a href="/tutorials/">Tutorials</a><a href="/docs/">Documentation</a><a href="/docs/shortcuts/">Keyboard shortcuts</a><a href="/blog/">Blog</a></div>
+    <div><h4>Learn</h4><a href="/tools/">Free tools</a><a href="/tutorials/">Tutorials</a><a href="/docs/">Documentation</a><a href="/docs/shortcuts/">Keyboard shortcuts</a><a href="/blog/">Blog</a></div>
     <div><h4>Follow</h4><a href="https://www.youtube.com/@ReelSmithVdo" target="_blank" rel="noopener">YouTube</a><a href="https://www.facebook.com/reelsmithvdo/" target="_blank" rel="noopener">Facebook</a><a href="https://www.reddit.com/user/reelsmithvdo/" target="_blank" rel="noopener">Reddit</a></div>
     <div><h4>Support</h4><a href="/?report=bug">Report a bug</a><a href="/?report=feature">Request a feature</a><a href="/docs/faq/">FAQ</a></div>
     <div><h4>Reelsmith</h4><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="#" data-consent-settings>Cookie settings</a><a href="mailto:reelsmith.vdo@gmail.com">Contact</a></div>
@@ -199,12 +199,70 @@ ${cats.map((c) => `<section class="doc-cat" id="${slug(c)}"><h2>${esc(c)}</h2><u
 ${cta}</div>`,
 }), { priority: 0.7 });
 
+
+// ---------------------------------------------------------------- article helpers (SEO)
+// Image size from the file header (JPEG, PNG, WebP), so <img> gets width/height and the page does not jump.
+const sizeCache = {};
+function imgSize(src) {
+  if (!src || !src.startsWith('/')) return null;
+  if (src in sizeCache) return sizeCache[src];
+  let r = null;
+  try {
+    const b = fs.readFileSync(path.join(SRC, src.split('?')[0]));
+    if (b[0] === 0x89 && b[1] === 0x50) r = [b.readUInt32BE(16), b.readUInt32BE(20)];
+    else if (b[0] === 0xff && b[1] === 0xd8) {
+      for (let i = 2; i < b.length - 9;) {
+        if (b[i] !== 0xff) { i++; continue; }
+        const m = b[i + 1], len = b.readUInt16BE(i + 2);
+        if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) { r = [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)]; break; }
+        i += 2 + len;
+      }
+    } else if (b.toString('ascii', 0, 4) === 'RIFF' && b.toString('ascii', 8, 12) === 'WEBP') {
+      const k = b.toString('ascii', 12, 16);
+      if (k === 'VP8X') r = [1 + b.readUIntLE(24, 3), 1 + b.readUIntLE(27, 3)];
+      else if (k === 'VP8 ') r = [b.readUInt16LE(26) & 0x3fff, b.readUInt16LE(28) & 0x3fff];
+      else if (k === 'VP8L') { const n = b.readUInt32LE(21); r = [1 + (n & 0x3fff), 1 + ((n >> 14) & 0x3fff)]; }
+    }
+  } catch {}
+  return (sizeCache[src] = r);
+}
+const sizeAttr = (src) => { const d = imgSize(src); return d ? ` width="${d[0]}" height="${d[1]}"` : ''; };
+// Admin HTML: give every H2 an id (jump links), images their size, and lazy loading below the first one.
+function enhanceHtml(html) {
+  const used = new Set();
+  let n = 0;
+  return html
+    .replace(/<h2>([\s\S]*?)<\/h2>/g, (m, t) => { let id = slug(t) || 'section'; while (used.has(id)) id += '-2'; used.add(id); return `<h2 id="${id}">${t}</h2>`; })
+    .replace(/<h2 id="([^"]+)"/g, (m, id) => { used.add(id); return m; })
+    .replace(/<img\b([^>]*)>/g, (m, at) => {
+      n++;
+      const src = (at.match(/\bsrc="([^"]+)"/) || [])[1];
+      let out = at;
+      if (!/\bwidth=/.test(out)) out += sizeAttr(src);
+      if (!/\bloading=/.test(out)) out += ' loading="lazy"';
+      if (!/\bdecoding=/.test(out)) out += ' decoding="async"';
+      return `<img${out}>`;
+    });
+}
+const tocHtml = (html) => {
+  const hs = [...html.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/g)];
+  if (hs.length < 4) return '';
+  return `<nav class="toc" aria-label="On this page"><strong>On this page</strong><ol>${hs.map((h) => `<li><a href="#${h[1]}">${h[2].replace(/<[^>]+>/g, '')}</a></li>`).join('')}</ol></nav>`;
+};
 // ---------------------------------------------------------------- tutorials and blog
+// Up to three other guides: same category first, then the same section, then the rest.
+function relatedHtml(kind, a) {
+  const all = [...tutorials.map((x) => ['/tutorials/', x]), ...posts.map((x) => ['/blog/', x])].filter(([, x]) => x.slug !== a.slug);
+  const score = ([b, x]) => (a.category && x.category === a.category ? 2 : 0) + ((b === '/tutorials/') === (kind === 'tutorial') ? 1 : 0);
+  const pick = all.sort((p, q) => score(q) - score(p)).slice(0, 3);
+  if (!pick.length) return '';
+  return `<section class="related"><h2>Related guides</h2><ul>${pick.map(([b, x]) => `<li><a href="${b}${x.slug}/">${esc(x.title)}</a></li>`).join('')}</ul></section>`;
+}
 function articlePage(kind, a) {
   const base = kind === 'tutorial' ? '/tutorials/' : '/blog/';
   const p = base + a.slug + '/';
   const bc = [[kind === 'tutorial' ? 'Tutorials' : 'Blog', base], [a.title, p]];
-  const bodyHtml = a.html != null ? a.html : markdown(a.body, base + a.slug); // admin posts are stored as clean HTML
+  const bodyHtml = a.html != null ? enhanceHtml(a.html) : markdown(a.body, base + a.slug); // admin posts are stored as clean HTML
   const words = bodyHtml.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
   const meta = [a.date ? `<time datetime="${a.date}">${fmtDate(a.date)}</time>` : '', a.categoryName ? esc(a.categoryName) : '', `${Math.max(1, Math.round(words / 220))} min read`].filter(Boolean).join(' · ');
   const body = `<div class="wrap narrow"><article class="prose">
@@ -212,9 +270,11 @@ ${crumbHtml(bc)}
 <h1>${esc(a.title)}</h1>
 <p class="meta">${meta}</p>
 <p class="lead">${a.html != null ? esc(a.excerpt || a.description) : inline(a.description)}</p>
-${a.html != null && a.image && !bodyHtml.includes(a.image) ? `<figure class="hero-img"><img src="${esc(a.image)}" alt="${esc(a.imageAlt || a.title)}" fetchpriority="high"></figure>` : ''}
+${a.html != null && a.image && !bodyHtml.includes(a.image) ? `<figure class="hero-img"><img src="${esc(a.image)}" alt="${esc(a.imageAlt || a.title)}"${sizeAttr(a.image)} fetchpriority="high"></figure>` : ''}
+${tocHtml(bodyHtml)}
 ${bodyHtml}
 ${cta}
+${relatedHtml(kind, a)}
 </article></div>`;
   const ld = { '@context': 'https://schema.org', '@type': kind === 'tutorial' ? 'TechArticle' : 'BlogPosting', headline: a.title, description: a.description, url: ORIGIN + p, image: ORIGIN + (a.image || '/assets/og.jpg'), datePublished: a.date, dateModified: a.updated || a.date, author: { '@type': 'Organization', name: 'Reelsmith' }, publisher: { '@type': 'Organization', name: 'Reelsmith', logo: { '@type': 'ImageObject', url: ORIGIN + '/assets/icon-256.png' } } };
   if (a.keywords && a.keywords.length) ld.keywords = a.keywords.join(', ');
@@ -222,9 +282,36 @@ ${cta}
 }
 tutorials.forEach((a) => articlePage('tutorial', a));
 posts.forEach((a) => articlePage('blog', a));
-const cards = (list, base) => `<div class="cards">${list.map((a) => `<a class="card" href="${base}${a.slug}/">${a.image ? `<img src="${a.image}" alt="" loading="lazy">` : ''}<h2>${esc(a.title)}</h2><p>${esc(a.description)}</p>${a.date && base === '/blog/' ? `<time datetime="${a.date}">${fmtDate(a.date)}</time>` : ''}</a>`).join('')}</div>`;
-write('/tutorials/', layout({ title: 'Video Editing Tutorials', description: 'Step-by-step tutorials for Reelsmith, the free online video editor: captions, background removal, vertical videos, text animation, audio and more.', urlPath: '/tutorials/', section: '/tutorials/', body: `<div class="wrap"><h1>Tutorials</h1><p class="lead">Step-by-step guides for the things people do most. Every tutorial works in the free browser editor.</p>${cards(tutorials, '/tutorials/')}${cta}</div>` }), { priority: 0.8 });
-write('/blog/', layout({ title: 'Reelsmith Blog', description: 'News, tips and behind-the-scenes from Reelsmith, the free video editor that runs in your browser.', urlPath: '/blog/', section: '/blog/', body: `<div class="wrap"><h1>Blog</h1><p class="lead">News and editing tips.</p>${cards(posts, '/blog/')}</div>` }), { priority: 0.6 });
+const itemList = (name, list, base) => ({ '@context': 'https://schema.org', '@type': 'CollectionPage', name, url: ORIGIN + base, mainEntity: { '@type': 'ItemList', itemListElement: list.map((a, i) => ({ '@type': 'ListItem', position: i + 1, url: ORIGIN + base + a.slug + '/', name: a.title })) } });
+const cards = (list, base) => `<div class="cards">${list.map((a) => `<a class="card" href="${base}${a.slug}/">${a.image ? `<img src="${a.image}" alt=""${sizeAttr(a.image)} loading="lazy">` : ''}<h2>${esc(a.title)}</h2><p>${esc(a.description)}</p>${a.date && base === '/blog/' ? `<time datetime="${a.date}">${fmtDate(a.date)}</time>` : ''}</a>`).join('')}</div>`;
+write('/tutorials/', layout({ title: 'Video Editing Tutorials', description: 'Step-by-step tutorials for Reelsmith, the free online video editor: captions, background removal, vertical videos, text animation, audio and more.', urlPath: '/tutorials/', section: '/tutorials/', jsonld: [itemList('Video Editing Tutorials', tutorials, '/tutorials/')], body: `<div class="wrap"><h1>Tutorials</h1><p class="lead">Step-by-step guides for the things people do most. Every tutorial works in the free browser editor.</p>${cards(tutorials, '/tutorials/')}${cta}</div>` }), { priority: 0.8 });
+write('/blog/', layout({ title: 'Reelsmith Blog', description: 'News, tips and behind-the-scenes from Reelsmith, the free video editor that runs in your browser.', urlPath: '/blog/', section: '/blog/', jsonld: [itemList('Reelsmith Blog', posts, '/blog/')], body: `<div class="wrap"><h1>Blog</h1><p class="lead">News and editing tips.</p>${cards(posts, '/blog/')}</div>` }), { priority: 0.6 });
+
+// ---------------------------------------------------------------- tools (content/tools/*.md): one page per task
+// Each page opens the editor with a task guide: /?tool=<id> (see W.TOOLS in src/js/web.js).
+const tools = readMd('tools').sort((a, b) => (+a.order || 99) - (+b.order || 99));
+const toolIds = new Set((fs.readFileSync(path.join(SRC, 'js', 'web.js'), 'utf8').match(/W\.TOOLS = \{([\s\S]*?)\n  \};/) || ['', ''])[1].match(/^\s{4}([\w-]+): \{/gm)?.map((x) => x.trim().replace(/: \{$/, '')) || []);
+for (const t of tools) {
+  if (!toolIds.has(t.tool)) throw new Error(`content/tools/${t.slug}.md: tool "${t.tool}" is not in W.TOOLS (src/js/web.js)`);
+  const p = `/tools/${t.slug}/`;
+  const bc = [['Tools', '/tools/'], [t.title, p]];
+  const open = `<p class="hero-cta"><a class="btn big" href="/?tool=${t.tool}">Open the tool — free</a></p>`;
+  const others = tools.filter((x) => x !== t).slice(0, 6);
+  const body = `<div class="wrap narrow"><article class="prose">
+${crumbHtml(bc)}
+<h1>${esc(t.title)}</h1>
+<p class="lead">${inline(t.description)}</p>
+${open}
+${t.image ? `<figure class="hero-img"><img src="${esc(t.image)}" alt="${esc(t.imageAlt || t.title)}"${sizeAttr(t.image)} fetchpriority="high"></figure>` : ''}
+${enhanceHtml(markdown(t.body, p))}
+${cta}
+<section class="related"><h2>More free tools</h2><ul>${others.map((x) => `<li><a href="/tools/${x.slug}/">${esc(x.title)}</a></li>`).join('')}</ul></section>
+</article></div>`;
+  const ld = { '@context': 'https://schema.org', '@type': 'WebApplication', name: `${t.title} — Reelsmith`, url: ORIGIN + p, description: t.description, applicationCategory: 'MultimediaApplication', operatingSystem: 'Web browser', isAccessibleForFree: true, offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }, image: ORIGIN + (t.image || '/assets/og.jpg') };
+  write(p, layout({ title: t.metaTitle || t.title, description: t.description, urlPath: p, body, section: '/tools/', image: t.image, jsonld: [crumbs(bc), ld] }), { priority: 0.8 });
+}
+write('/tools/', layout({ title: 'Free Online Video Tools', description: 'Free online video tools that run in your browser: add subtitles, trim, merge, crop, resize, rotate, compress, speed up, reverse and more. Nothing is uploaded.', urlPath: '/tools/', section: '/tools/', jsonld: [itemList('Free Online Video Tools', tools, '/tools/')],
+  body: `<div class="wrap"><h1>Free online video tools</h1><p class="lead">Quick jobs, done in your browser. Each tool opens the full editor with a short guide — your files are never uploaded.</p><div class="cards">${tools.map((t) => `<a class="card" href="/tools/${t.slug}/"><h2>${esc(t.title)}</h2><p>${esc(t.description)}</p></a>`).join('')}</div>${cta}</div>` }), { priority: 0.9 });
 
 // ---------------------------------------------------------------- simple pages + features
 for (const id of ['about', 'privacy', 'terms']) {

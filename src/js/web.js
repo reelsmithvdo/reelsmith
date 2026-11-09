@@ -5,7 +5,7 @@
 (function (RS) {
   if (window.native) return;
   const W = RS.web = {};
-  W.VERSION = '1.1'; // shown in bug reports — bump when you publish notable changes
+  W.VERSION = '1.2'; // shown in bug reports — bump when you publish notable changes
   const S = RS.state;
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   const MOD = isMac ? '⌘' : 'Ctrl+';
@@ -245,6 +245,8 @@
       sep,
       ['Import Media…', 'import', MOD + 'I'],
       ['Export Video…', 'export', MOD + 'M'],
+      ['Export as GIF…', 'exportGif'],
+      ['Export Audio…', 'exportAudio'],
     ]],
     ['Edit', [
       ['Undo', 'undo', MOD + 'Z'], ['Redo', 'redo', '⇧' + MOD + 'Z'], sep,
@@ -440,6 +442,46 @@
     return c;
   };
   W.isHomeOpen = () => !!home;
+  // ---------- task guides for the website's tool pages (/tools/…  →  /?tool=<id>) ----------
+  // Each guide: title, steps (short, real UI labels), the panel tab to open, buttons that run commands.
+  const IMPORT = ['Import video', 'import'];
+  W.TOOLS = {
+    subtitles: { title: 'Add subtitles', tab: 'captions', steps: ['Import your video and drag it onto the timeline.', 'Click <b>Auto-generate</b> in the Captions panel.', 'Fix any words, then <b>Export</b> with <b>Burn into the video</b>.'], actions: [IMPORT, ['Auto-generate', 'autoCaptions']] },
+    trim: { title: 'Trim a video', steps: ['Import your video and drag it onto the timeline.', 'Drag the start or end of the clip to trim it — or press <b>C</b> and click to cut, then select a piece and press <b>Delete</b>.', 'Click <b>Export</b>.'], actions: [IMPORT] },
+    merge: { title: 'Merge videos', steps: ['Import all your clips (you can select several at once).', 'Drag them onto the timeline one after another.', 'Optional: drag a transition from <b>Effects</b> between two clips. Then <b>Export</b>.'], actions: [IMPORT] },
+    crop: { title: 'Crop a video', tab: 'effects', search: 'crop', steps: ['Import your video and drag it onto the timeline.', 'Drag <b>Crop</b> from the Effects panel onto the clip.', 'Set <b>Left</b>, <b>Right</b>, <b>Top</b> and <b>Bottom</b> in Effect Controls, then <b>Export</b>.'], actions: [IMPORT] },
+    resize: { title: 'Resize a video', steps: ['Open <b>Sequence Settings</b> and pick a size: Vertical 9:16, Square 1:1 or Portrait 4:5.', 'Import your video and drag it onto the timeline; scale it in Effect Controls ▸ Motion to fill the frame.', 'Click <b>Export</b> and choose the matching preset.'], actions: [['Sequence Settings', 'sequenceSettings'], IMPORT] },
+    rotate: { title: 'Rotate or flip a video', tab: 'effects', search: 'flip', steps: ['Import your video and drag it onto the timeline.', 'Select the clip and set <b>Rotation</b> (90, 180 or −90) in Effect Controls ▸ Motion — or drag <b>Horizontal Flip</b> onto it.', 'Click <b>Export</b>.'], actions: [IMPORT] },
+    music: { title: 'Add music to a video', steps: ['Import your video and your music file.', 'Drag the video to V1 and the music to an empty audio track below.', 'Select the music and apply <b>Effects ▸ Smart Audio ▸ Auto Duck Music Under Voice</b>, then <b>Export</b>.'], actions: [IMPORT] },
+    text: { title: 'Add text to a video', tab: 'effects', search: 'title', steps: ['Import your video and drag it onto the timeline.', 'Press <b>T</b>, click the video and type — or double-click a <b>Title Template</b>.', 'Style it in Effect Controls ▸ Text, then <b>Export</b>.'], actions: [IMPORT, ['Add title', 'addTitle']] },
+    speed: { title: 'Speed up or slow down a video', steps: ['Import your video and drag it onto the timeline.', 'Select the clip and choose <b>Clip ▸ Speed/Duration…</b> — 200 % is twice as fast, 50 % is slow motion.', 'Click <b>Export</b>.'], actions: [IMPORT] },
+    reverse: { title: 'Reverse a video', steps: ['Import your video and drag it onto the timeline.', 'Select the clip and choose <b>Clip ▸ Reverse Clip</b>.', 'Click <b>Export</b>.'], actions: [IMPORT] },
+    mute: { title: 'Remove audio from a video', steps: ['Import your video and drag it onto the timeline.', 'Select the clip, press <b>⌘L</b> (Ctrl+L) to unlink, click the audio part and press <b>Delete</b>.', 'Click <b>Export</b> — the video has no sound.'], actions: [IMPORT] },
+    compress: { title: 'Compress a video', steps: ['Import your video and drag it onto the timeline.', 'Click <b>Export</b> and choose <b>Review copy (small file)</b> — or keep the size and set <b>Quality</b> lower.', 'Click <b>Export</b>.'], actions: [IMPORT, ['Export…', 'export']] },
+    gif: { title: 'Make a GIF from a video', steps: ['Import your video and drag it onto the timeline.', 'Trim it to the moment you want — short GIFs (2–10 s) look best.', 'Click <b>Export as GIF</b>, pick a size and frame rate, and save.'], actions: [IMPORT, ['Export as GIF…', 'exportGif']] },
+    audio: { title: 'Extract audio from a video', steps: ['Import your video and drag it onto the timeline.', 'Optional: trim it, or set In and Out points (I and O) around the part you need.', 'Click <b>Export Audio</b> and choose AAC (.m4a) or WAV.'], actions: [IMPORT, ['Export Audio…', 'exportAudio']] },
+    blur: { title: 'Add a blurred background', tab: 'effects', search: 'blur fill', steps: ['Open <b>Sequence Settings</b> and choose Vertical 9:16 (or another size).', 'Import your video and drag it onto the timeline.', 'Drag <b>Background Blur Fill</b> from the Effects panel onto the clip, then <b>Export</b>.'], actions: [['Sequence Settings', 'sequenceSettings'], IMPORT] },
+  };
+  // A small step-by-step card in the editor (tool pages, templates). g: { title, steps: [html], actions: [[label, cmd]] }.
+  W.showGuide = (g) => {
+    RS.$$('.tool-guide').forEach((x) => x.remove());
+    const box = RS.h('div', { class: 'tool-guide', role: 'note', 'aria-label': g.title },
+      RS.h('div', { class: 'tg-head' }, RS.h('strong', null, g.title), RS.h('button', { type: 'button', class: 'tg-x', title: 'Close', 'aria-label': 'Close', onclick: () => box.remove() }, '×')),
+      RS.h('ol', null, g.steps.map((t) => { const li = RS.h('li'); li.innerHTML = t; return li; })),
+      RS.h('div', { class: 'tg-actions' }, (g.actions || []).map(([label, cmd], i) => RS.h('button', { type: 'button', class: 'btn small' + (i === 0 ? ' primary' : ''), onclick: () => RS.cmd(cmd) }, label))));
+    document.body.append(box);
+    return box;
+  };
+  W.toolGuide = (id) => {
+    const g = W.TOOLS[id];
+    if (!g) return;
+    W.hideHome();
+    if (g.tab) { const b = RS.$(`.tab[data-tab="${g.tab}"]`); if (b && !RS.touch?.isPhone?.()) b.click(); }
+    if (g.search) { const q = RS.$('#effects input.search'); if (q) { q.value = g.search; q.dispatchEvent(new Event('input', { bubbles: true })); } }
+    W.showGuide(g);
+    W.toolGuideOpen = id;
+  };
+
   W.hideHome = () => { if (home) { home.remove(); home = null; RS.engine.invalidate(); } };
   W.home = async () => {
     W.hideHome();
@@ -464,13 +506,17 @@
       RS.h('main', { class: 'home-main' },
         RS.h('div', { class: 'home-hero' },
           RS.h('img', { src: 'assets/icon-256.png', alt: '', width: 96, height: 96 }),
-          RS.h('div', null, RS.h('h1', null, 'Reelsmith'), RS.h('p', null, 'Free video editor in your browser. Your files stay on your computer.'))),
+          RS.h('div', null, RS.h('div', { class: 'home-title', role: 'heading', 'aria-level': '2' }, 'Reelsmith'), RS.h('p', null, 'Free video editor in your browser. Your files stay on your computer.'))),
         RS.h('div', { class: 'home-actions' },
           big('plus', 'New Project', go(() => RS.cmd('new'))),
           big('import', 'Open From Computer', go(() => RS.cmd('import'))),
           big('film', 'Start Editing', go(() => {})),
           auto ? big('undo', `Recover “${auto.name}”`, go(async () => { const ok = await RS.app.loadProjectText(auto.saved.project, auto.saved.filePath || null); if (ok) RS.markDirty(true); })) : null),
         drop,
+        RS.templates ? RS.h('section', { class: 'home-templates' }, RS.h('h2', null, 'Start from a template'),
+          RS.h('div', { class: 'home-tpl-cards' }, RS.templates.LIST.map((t) => RS.h('button', { type: 'button', class: 'home-tpl', 'data-template': t.id, onclick: go(() => RS.templates.create(t.id)) },
+            RS.h('span', { class: 'tpl-shape', style: `aspect-ratio:${t.w}/${t.h}` }),
+            RS.h('span', { class: 'tpl-text' }, RS.h('strong', null, t.name), RS.h('small', null, t.desc)))))) : null,
         recentBox,
         RS.h('div', { class: 'home-formats' }, ['MP4', 'MOV', 'WEBM', 'MKV', 'MP3', 'WAV', 'M4A', 'PNG', 'JPG', 'GIF'].map((f) => RS.h('span', null, f))),
         siteLinks()));
@@ -520,6 +566,9 @@
       RS.h('button', { type: 'button', onclick: () => W.feedback('feature') }, 'Request a Feature'));
     RS.$('#topbar-actions').before(links);
     if (!window.__RS_TEST__) W.home();
+    // Links from the website's tool pages: /?tool=<id> opens the editor with a short guide for that task.
+    const tool = new URLSearchParams(location.search).get('tool');
+    if (tool && W.TOOLS[tool]) { history.replaceState(null, '', location.pathname); setTimeout(() => W.toolGuide(tool), 200); }
     // Links from the website: /?report=bug or /?report=feature open the form.
     const rep = new URLSearchParams(location.search).get('report');
     if (rep === 'bug' || rep === 'feature') {
