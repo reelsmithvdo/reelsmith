@@ -31,6 +31,24 @@ module.exports = {
       const p = await probeOPFS(t, 't-mp4.mp4');
       t.near(p.dur, 3, 0.15, 'duration'); t.eq([p.w, p.h], [640, 360]); t.ok(p.audio, 'audio track');
     },
+    'Location box: click to choose where to save, then Export uses it': async (t) => {
+      if (!t.isWeb) t.skip('web only');
+      await t.reset(); await project(t); await pickToOPFS(t);
+      await t.eval(`window.__pickCount = 0; const p0 = window.showSaveFilePicker; window.showSaveFilePicker = async (o) => { window.__pickCount++; o = Object.assign({}, o, { suggestedName: 'chosen-name.mp4' }); return p0(o); }; 0`);
+      await t.eval(`RS.cmd('export'); 0`);
+      await t.until(`document.querySelector('.modal .path-input')`, 4000, 'export dialog');
+      t.ok(/Click to choose/.test(await t.eval(`document.querySelector('.path-input').value`)), 'location hint');
+      await t.click('.modal .path-input', { mouse: true });
+      await t.until(`window.__pickCount === 1 && /chosen-name\.mp4/.test(document.querySelector('.path-input').value)`, 4000, 'location did not update after choosing');
+      t.eq(await t.eval(`[...document.querySelectorAll('.modal input[type=text]')].find((x) => !x.readOnly).value`), 'chosen-name', 'file name follows the chosen file');
+      t.ok(await t.eval(`[...document.querySelectorAll('.modal button')].some((b) => b.textContent === 'Choose…' && b.offsetParent)`), 'Choose… button');
+      await t.eval(`[...document.querySelectorAll('.modal-foot button')].find((b) => b.textContent === 'Export').click(); 0`);
+      await t.until(`[...document.querySelectorAll('.modal-head')].some((h) => h.textContent === 'Export complete')`, 120000, 'export did not finish');
+      await t.eval(`document.querySelectorAll('.modal-foot .primary').forEach((b) => b.click()); 0`);
+      t.eq(await t.eval('window.__pickCount'), 1, 'Export asked for the location a second time');
+      const p = await probeOPFS(t, 'chosen-name.mp4');
+      t.near(p.dur, 3, 0.15, 'exported to the chosen file');
+    },
     'export goes to Downloads when the browser has no file picker': async (t) => {
       if (!t.isWeb) t.skip('web only');
       await t.reset(); await project(t);

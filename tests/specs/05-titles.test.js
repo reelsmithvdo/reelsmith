@@ -67,6 +67,28 @@ module.exports = {
       const bad = res.filter((r) => !r[1]);
       t.eq(bad.map((r) => r[0]), [], 'templates that added nothing');
     },
+    'stickers draw the real emoji (in colour, no "?" boxes)': async (t) => {
+      await base(t);
+      const r = await t.page(async () => {
+        const out = [];
+        for (const st of T.allFx().filter((i) => i.group === 'Stickers')) {
+          await st.create(0.5);
+          const c = T.clips('text').pop();
+          const cv = RS.engine.textCanvas(c, null, 1.5);
+          const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+          let col = 0; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 128 && Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2]) > 60) col++;
+          out.push([c.text.content, col]);
+          RS.cmd('undo');
+        }
+        return out;
+      });
+      t.gt(r.length, 10);
+      t.eq(r.filter((x) => x[1] < 50).map((x) => x[0]), [], 'stickers drawn without colour (missing glyph)');
+    },
+    'letter animations and typewriter keep emoji whole': async (t) => {
+      const r = await t.page(() => ({ g: RS.engine.graphemes('Hi 👍🏽🔥!').map(([a, b]) => 'Hi 👍🏽🔥!'.slice(a, b)) }));
+      t.eq(r.g, ['H', 'i', ' ', '👍🏽', '🔥', '!']);
+    },
     'stickers add an emoji clip': async (t) => {
       await base(t);
       await t.page(async () => { const st = T.allFx().find((i) => i.group === 'Stickers'); await st.create(1); });

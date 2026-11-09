@@ -50,11 +50,33 @@
     const name = RS.h('input', { type: 'text', value: (S.project.name || 'Export').replace(/[\\/:*?"<>|]/g, '_') });
     const extLbl = RS.h('span', { class: 'muted' });
     const webDirect = !!(RS.web && RS.web.canSaveDirect());
-    const loc = RS.h('input', { type: 'text', readonly: true, class: 'path-input', value: dir || (webDirect ? 'You choose where to save when you click Export' : 'Your browser’s Downloads folder') });
-    const browse = RS.h('button', { class: 'btn small', type: 'button' }, 'Browse…');
-    browse.disabled = !RS.native;
-    if (!RS.native) browse.style.display = 'none';
-    browse.addEventListener('click', async () => {
+    const loc = RS.h('input', { type: 'text', readonly: true, class: 'path-input', value: dir || (webDirect ? 'Click to choose where to save…' : 'Your browser’s Downloads folder') });
+    const browse = RS.h('button', { class: 'btn small', type: 'button' }, RS.native ? 'Browse…' : 'Choose…');
+    // Browser (Chrome / Edge): pick the destination file now, or when Export is clicked.
+    let picked = null; // { handle, ext }
+    const pickWeb = async () => {
+      const f = FORMATS.find((x) => x.id === fmt.value);
+      const base = (name.value.trim() || 'Export').replace(/[\\/:*?"<>|]/g, '_').replace(/\.(mp4|webm|mov)$/i, '');
+      const h = await RS.web.pickExportFile(base + '.' + f.ext, supported(f));
+      if (!h) return false;
+      picked = { handle: h, ext: f.ext };
+      name.value = h.name.replace(/\.[^.]+$/, ''); // the name may have been changed in the save dialog
+      loc.value = `Saving as “${h.name}” in the folder you chose`;
+      loc.classList.add('chosen');
+      return true;
+    };
+    if (!RS.native) {
+      if (webDirect) {
+        loc.classList.add('clickable');
+        loc.title = 'Choose where to save the video';
+        loc.addEventListener('click', pickWeb);
+        browse.addEventListener('click', pickWeb);
+      } else {
+        browse.style.display = 'none';
+        loc.addEventListener('click', () => RS.toast('This browser saves exports to your Downloads folder. In Chrome or Edge you can pick a folder.', 'info', 5000));
+      }
+    }
+    if (RS.native) browse.addEventListener('click', async () => {
       const d = await RS.native.pickFolder(dir);
       if (d) { dir = d; loc.value = d; try { localStorage.setItem(DIR_KEY, d); } catch { /* ignore */ } suggestFreeName(); }
     });
@@ -293,9 +315,13 @@
             }
             let webHandle = null;
             if (webDirect) {
-              // Ask for the destination right away: the browser only allows it during the click.
-              webHandle = await RS.web.pickExportFile(fileName, supported(f));
-              if (webHandle === false) return false; // cancelled: keep the dialog open
+              // Use the file chosen with "Choose…" if it still matches the name and format; otherwise ask now
+              // (the browser only allows the save dialog during a click).
+              if (picked && picked.ext === f.ext && picked.handle.name === fileName) webHandle = picked.handle;
+              else {
+                webHandle = await RS.web.pickExportFile(fileName, supported(f));
+                if (webHandle === false) return false; // cancelled: keep the dialog open
+              }
             }
             const { t0, t1 } = rangeOf();
             if (t1 - t0 < 1 / fps) { RS.toast('The export range is empty', 'error'); return false; }

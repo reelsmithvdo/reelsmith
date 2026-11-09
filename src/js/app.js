@@ -570,7 +570,8 @@
   C.helpFaq = () => RS.help.open('faq');
   C.about = () => RS.modal({
     title: 'About Reelsmith',
-    body: RS.h('div', { class: 'about' }, RS.h('img', { src: 'assets/icon-128.png', width: 96, height: 96, alt: '' }), RS.h('p', null, 'Reelsmith 1.0 — a non-linear video editor.'), RS.h('p', { class: 'muted small' }, 'Original software. Multi-track editing, keyframes, titles, color, audio mixing and H.264 export.'), RS.h('p', { class: 'muted small' }, 'Contact: reelsmith.vdo@gmail.com')),
+    body: RS.h('div', { class: 'about' }, RS.h('img', { src: 'assets/icon-128.png', width: 96, height: 96, alt: '' }), RS.h('p', null, 'Reelsmith 1.0 — a non-linear video editor.'), RS.h('p', { class: 'muted small' }, 'Original software. Multi-track editing, keyframes, titles, color, audio mixing and H.264 export.'), RS.h('p', { class: 'muted small' }, 'Contact: reelsmith.vdo@gmail.com'),
+      RS.h('p', { class: 'muted small credit', html: 'Made with <svg class="heart" viewBox="0 0 24 24" width="14" height="14" aria-label="love" role="img"><path fill="#e5484d" d="M12 21s-7.5-4.6-10-9.3C.4 8.6 2.3 4.5 6.2 4.5c2.2 0 3.6 1.2 4.4 2.4h2.8c.8-1.2 2.2-2.4 4.4-2.4 3.9 0 5.8 4.1 4.2 7.2C19.5 16.4 12 21 12 21z"/></svg> by <a href="https://algomatryx.com/" target="_blank" rel="noopener">Algo Matryx</a>' })),
   });
 
   // --- files ---

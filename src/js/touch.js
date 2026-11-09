@@ -17,6 +17,7 @@
     setTimeout(() => { if (RS.timeline && RS.timeline.render) RS.timeline.render(); if (RS.engine) RS.engine.invalidate(); }, 50);
   };
   T.isPhone = () => phone.matches;
+  T.debug = () => ({ swallowFor: Math.round(swallowClickUntil - performance.now()), pressing: !!lp }); // used by the tests
 
   // ---------- gestures ----------
   // A browser can cancel a touch (e.g. it decided to scroll). Code waiting for pointerup would then
@@ -24,7 +25,8 @@
   document.addEventListener('pointercancel', (e) => {
     if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
     const init = { bubbles: true, cancelable: true, pointerId: e.pointerId, pointerType: e.pointerType, clientX: e.clientX, clientY: e.clientY, isPrimary: e.isPrimary };
-    (e.target || document).dispatchEvent(new PointerEvent('pointerup', init));
+    const target = e.target || document;
+    setTimeout(() => target.dispatchEvent(new PointerEvent('pointerup', init)), 0);
   }, true);
 
   // Long-press = right-click. Skipped when the browser already sent a contextmenu (Android).
@@ -39,22 +41,31 @@
     if (t.closest('input, textarea, select, [contenteditable]')) return;
     const x = e.clientX, y = e.clientY;
     clearTimeout(lp && lp.timer);
-    lp = {
-      x, y, timer: setTimeout(() => {
-        lp = null;
-        if (performance.now() - lastNative < 800) return;
-        const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 2 });
-        ev.__synthetic = true;
-        t.dispatchEvent(ev);
-        // Lifting the finger would "click" whatever menu item opened under it — ignore that click.
-        swallowClickUntil = performance.now() + 1500;
-      }, 600),
+    const fire = () => {
+      clearTimeout(lp && lp.timer);
+      lp = null;
+      if (performance.now() - lastNative < 800) return;
+      const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: x, clientY: y, button: 2 });
+      ev.__synthetic = true;
+      // The element may have been redrawn during the hold (e.g. the timeline re-renders when a thumbnail
+      // arrives): send the event to whatever is under the finger now.
+      const target = t.isConnected ? t : document.elementFromPoint(x, y);
+      if (target) target.dispatchEvent(ev);
+      // Lifting the finger would "click" whatever menu item opened under it — ignore that click.
+      swallowClickUntil = performance.now() + 1500;
     };
+    lp = { x, y, t0: performance.now(), fire, timer: setTimeout(fire, 600) };
   }, true);
   const cancelLp = (e) => { if (lp && (e.type !== 'pointermove' || Math.hypot(e.clientX - lp.x, e.clientY - lp.y) > 10)) { clearTimeout(lp.timer); lp = null; } };
   document.addEventListener('pointermove', cancelLp, true);
   document.addEventListener('pointerup', cancelLp, true);
-  document.addEventListener('scroll', () => { if (lp) { clearTimeout(lp.timer); lp = null; } }, true);
+  // A finger that starts scrolling gets a pointercancel; scrolls the app makes itself must not cancel.
+  // A still finger held ~0.4 s that the browser then cancels (its own long-press gesture) is a long-press.
+  document.addEventListener('pointercancel', () => {
+    if (!lp) return;
+    if (performance.now() - lp.t0 > 400) lp.fire();
+    else { clearTimeout(lp.timer); lp = null; }
+  }, true);
 
   // ---------- phone panels as bottom sheets ----------
   const TABS = [

@@ -399,7 +399,9 @@
       const q = search.value.toLowerCase();
       list.innerHTML = '';
       for (const g of FX.list) {
-        const items = g.items.filter((x) => !q || x.name.toLowerCase().includes(q));
+        // Every word must appear in the effect's name or its category ("sound effects", "shape wipe", "transitions").
+        const words = q.trim().split(/\s+/).filter(Boolean);
+        const items = g.items.filter((x) => !words.length || words.every((w) => (g.group + ' ' + x.name).toLowerCase().includes(w)));
         if (!items.length) continue;
         list.append(RS.h('div', { class: 'fx-group' }, g.group));
         for (const x of items) {

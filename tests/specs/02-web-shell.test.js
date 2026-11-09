@@ -8,7 +8,7 @@ module.exports = {
       await t.sleep(300);
       t.ok(await t.eval('RS.web.isHomeOpen()'), 'home did not open');
       t.eq(await t.eval(`[...document.querySelectorAll('.home-btn')].map((b) => b.textContent.trim()).slice(0, 3)`), ['New Project', 'Open From Computer', 'Start Editing']);
-      t.eq(await t.eval(`document.querySelectorAll('.home .site-links a').length`), 7, 'website links on home');
+      t.eq(await t.eval(`document.querySelectorAll('.home .site-links > a').length`), 7, 'website links on home');
       await t.click('.home-btn', { index: 2 });
       t.ok(!(await t.eval('RS.web.isHomeOpen()')), 'Start Editing should close home');
     },
@@ -66,6 +66,12 @@ module.exports = {
       await t.until(`document.querySelector('.modal-head') ? 1 : 0`, 3000, 'form did not open');
       t.eq(await t.eval(`(document.querySelector('.modal-head') || {}).textContent`), 'Request a Feature');
       await t.page(() => T.closeModals());
+    },
+    'made-with credit links to Algo Matryx in a new tab': async (t) => {
+      await t.page(() => RS.web.home()); await t.sleep(300);
+      const a = await t.page(() => { const l = document.querySelector('.home .credit a'); return l && [l.href, l.target, l.rel, !!l.closest('.credit').querySelector('svg.heart')]; });
+      t.eq(a, ['https://algomatryx.com/', '_blank', 'noopener', true]);
+      await t.page(() => RS.web.hideHome());
     },
     'brand logo returns to the start screen': async (t) => {
       await t.reset();

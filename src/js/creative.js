@@ -473,7 +473,7 @@
     RS.commit('Add sticker', () => {
       const tr = freeVideoTrack(t, 3);
       const c = RS.makeClip({ type: 'text', trackId: tr.id, start: RS.frameRound(t, RS.fps()), duration: 3, props: { x: W * 0.28, y: -H * 0.22 } });
-      Object.assign(c.text, { content: emoji, size: Math.round(H * 0.2), shadow: true, bold: false, font: 'Apple Color Emoji' });
+      Object.assign(c.text, { content: emoji, size: Math.round(H * 0.2), shadow: true, bold: false }); // emoji fonts are in every text's font list
       c.anim = { in: { type: 'pop', dur: 0.4 }, loop: { type: 'wobble', speed: 1 }, out: { type: 'pop', dur: 0.3 } };
       S.project.clips.push(c);
       S.selection = new Set([c.id]);

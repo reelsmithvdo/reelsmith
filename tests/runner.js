@@ -103,7 +103,7 @@ function makeContext(win, url) {
       }
       await t.sleep(120);
     },
-    dblclick: (sel, opts = {}) => (t.isTouch && !opts.mouse ? t.doubleTap(sel) : t.click(sel, Object.assign({ count: 2 }, opts))),
+    dblclick: (sel, opts = {}) => (t.isTouch && !opts.mouse ? t.doubleTap(sel, opts.index || 0) : t.click(sel, Object.assign({ count: 2 }, opts))),
     rightClick: (sel) => t.click(sel, { button: 'right', mouse: true }),
     drag: async (from, to, steps = 10) => {
       const a = typeof from === 'string' ? await t.box(from) : from, b = typeof to === 'string' ? await t.box(to) : to;
@@ -122,8 +122,9 @@ function makeContext(win, url) {
     },
     type: async (text) => { for (const ch of text) { wc.sendInputEvent({ type: 'char', keyCode: ch }); } await t.sleep(80); },
     touch: (type, x, y) => cdp('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x, y }] }),
+    // Taps go through Chromium's gesture pipeline (like a real finger), so they produce clicks reliably.
     tap: async (x, y) => { await t.touch('touchStart', x, y); await t.sleep(30); await t.touch('touchEnd'); await t.sleep(220); },
-    doubleTap: async (sel) => { const b = await t.box(sel); if (!b) fail('element not found: ' + sel); await t.touch('touchStart', b.x, b.y); await t.touch('touchEnd'); await t.sleep(80); await t.touch('touchStart', b.x, b.y); await t.touch('touchEnd'); await t.sleep(300); },
+    doubleTap: async (sel, index = 0) => { const b = typeof sel === 'string' ? await t.box(sel, index) : sel; if (!b) fail('element not found: ' + sel); await t.touch('touchStart', b.x, b.y); await t.touch('touchEnd'); await t.sleep(80); await t.touch('touchStart', b.x, b.y); await t.touch('touchEnd'); await t.sleep(300); },
     touchDrag: async (a, b, steps = 10) => { await t.touch('touchStart', a.x, a.y); for (let i = 1; i <= steps; i++) { await t.touch('touchMove', a.x + (b.x - a.x) * i / steps, a.y + (b.y - a.y) * i / steps); await t.sleep(16); } await t.touch('touchEnd'); await t.sleep(250); },
     longPress: async (sel) => { const b = typeof sel === 'string' ? await t.box(sel) : sel; await t.touch('touchStart', b.x, b.y); await t.sleep(800); await t.touch('touchEnd'); await t.sleep(250); },
     // ----- app helpers
@@ -141,9 +142,29 @@ async function injectHelpers(wc) {
 }
 
 // ---------------------------------------------------------------- main
+process.on('unhandledRejection', (err) => { out('@@RESULT', { mode: MODE, spec: '(runner)', test: 'start', ok: false, msg: 'runner error: ' + ((err && err.stack) || err) }); app.exit(1); });
+async function openWeb(url) {
+  const [w, h, mobile] = VIEWPORTS[MODE];
+  const win = new BrowserWindow({ width: w, height: h, useContentSize: true, show: !!process.env.RS_TEST_SHOW, webPreferences: { contextIsolation: true, sandbox: true, backgroundThrottling: false } });
+  const t = makeContext(win, url);
+  // Load first: attaching the debugger to the initial blank page fails when Chromium swaps processes
+  // on the first navigation ("target closed"). Then emulate the device and load again.
+  await win.loadURL(url);
+  if (mobile) {
+    await t.cdp('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });
+    await t.cdp('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    await t.cdp('Emulation.setEmitTouchEventsForMouse', { enabled: true, configuration: 'mobile' });
+    await win.loadURL(url);
+  }
+  await t.until('window.RS && RS.app && document.querySelector(".tl-scroller") ? 1 : 0', 20000, 'editor did not start');
+  await injectHelpers(win.webContents);
+  await t.sleep(400);
+  return { win, t };
+}
+
 app.whenReady().then(async () => {
   let win, url;
-  const [w, h, mobile] = VIEWPORTS[MODE];
+  const [w, h] = VIEWPORTS[MODE];
   if (MODE === 'desktop') {
     require(path.join(ROOT, 'main.js'));
     for (let i = 0; i < 100 && !BrowserWindow.getAllWindows().length; i++) await new Promise((r) => setTimeout(r, 100));
@@ -152,27 +173,25 @@ app.whenReady().then(async () => {
     if (!process.env.RS_TEST_SHOW) win.hide();
     win.setContentSize(w, h);
     url = win.webContents.getURL();
-  } else {
-    url = await serve();
-    win = new BrowserWindow({ width: w, height: h, useContentSize: true, show: !!process.env.RS_TEST_SHOW, webPreferences: { contextIsolation: true, sandbox: true, backgroundThrottling: false } });
+  } else url = await serve();
+  let t = null;
+  if (MODE === 'desktop') {
+    t = makeContext(win, url);
+    await t.until('window.RS && RS.app && document.querySelector(".tl-scroller") ? 1 : 0', 20000, 'editor did not start');
+    await injectHelpers(win.webContents);
+    await t.sleep(500);
   }
-  const t = makeContext(win, url);
-  if (MODE !== 'desktop') {
-    if (mobile) {
-      await t.cdp('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 2, mobile: true });
-      await t.cdp('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
-      await t.cdp('Emulation.setEmitTouchEventsForMouse', { enabled: true, configuration: 'mobile' });
-    }
-    await win.loadURL(url);
-  }
-  await t.until('window.RS && RS.app && document.querySelector(".tl-scroller") ? 1 : 0', 20000, 'editor did not start');
-  await injectHelpers(win.webContents);
-  await t.sleep(500);
 
   for (const file of SPECS) {
     const spec = require(path.join(__dirname, 'specs', file));
     const name = spec.name || file;
     if (spec.modes && !spec.modes.includes(MODE)) continue;
+    // Web modes: every spec file gets a fresh window (like running each test class in its own process),
+    // so state left by one file — storage, emulator touch state — can never affect the next.
+    if (MODE !== 'desktop') {
+      if (win) { const old = win; setTimeout(() => old.destroy(), 0); }
+      try { ({ win, t } = await openWeb(url)); } catch (err) { out('@@RESULT', { mode: MODE, spec: name, test: '(open window)', ok: false, msg: err.stack || String(err) }); continue; }
+    }
     if (spec.before) { try { await spec.before(t); } catch (err) { out('@@RESULT', { mode: MODE, spec: name, test: '(setup)', ok: false, msg: err.stack || String(err) }); continue; } }
     for (const [title, fn] of Object.entries(spec.tests)) {
       const tags = spec.tags && spec.tags[title] || {};

@@ -9,6 +9,24 @@ const twoClips = async (t) => {
 module.exports = {
   name: 'Effects and transitions',
   tests: {
+    'effects search finds categories and names': async (t) => {
+      await t.reset();
+      if (t.isPhone) await t.page(() => RS.touch.openSheet('effects'));
+      else await t.eval(`document.querySelector('.tab[data-tab=effects]').click(); 0`);
+      await t.sleep(300);
+      const search = async (q) => t.page((q) => { const s = document.querySelector('#effects input[type=search]'); s.value = q; s.dispatchEvent(new Event('input')); return { groups: [...document.querySelectorAll('#effects .fx-group')].map((g) => g.textContent), items: document.querySelectorAll('#effects .fx-item').length, names: [...document.querySelectorAll('#effects .fx-item')].map((i) => i.textContent.trim()) }; }, q);
+      let r = await search('Sound Effects');
+      t.eq(r.groups, ['Sound Effects'], 'category search'); t.gt(r.items, 15);
+      r = await search('sound');
+      t.ok(r.groups.includes('Sound Effects'), 'partial category word');
+      r = await search('who');
+      t.ok(r.names.some((n) => /Whoosh/.test(n)), 'name search');
+      r = await search('shape transitions');
+      t.eq(r.groups, ['Shape Transitions']);
+      r = await search('zzzz');
+      t.eq(r.items, 0);
+      await search('');
+    },
     'every video and shape transition renders across the cut': async (t) => {
       await twoClips(t);
       const res = await t.page(async () => {

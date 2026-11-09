@@ -570,12 +570,24 @@
   E.getImage = getImage;
 
   // ---------- generated graphics ----------
-  E.fontCSS = (tx, size) => `${tx.italic ? 'italic ' : ''}${tx.bold ? '700' : '400'} ${size}px "${tx.font}", "Helvetica Neue", Arial, sans-serif`;
+  E.fontCSS = (tx, size) => `${tx.italic ? 'italic ' : ''}${tx.bold ? '700' : '400'} ${size}px "${tx.font}", "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"`;
   // Text rendering. Layers, back to front: background box, offset shadow, 3D extrusion, outer
   // outline, outline (+ drop shadow / glow), then the face (solid, highlight colour, gradient) with
   // an optional halftone dot pattern. Words wrapped in *asterisks* use the highlight colour.
   // reveal: characters shown (typewriter); units: per-word/letter animation state from RS.creative.
   const TEXT_FX_KEYS = ['grad', 'extrude', 'halftone', 'stroke2', 'offShadow', 'color2'];
+  // Visible characters as [start, end) indexes into the string. Emoji such as 🔥 or 👍🏽 are several
+  // UTF-16 code units; cutting them apart draws "?" boxes, so letters, typewriter steps and colour
+  // runs always break on these boundaries.
+  const SEG = typeof Intl !== 'undefined' && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  E.graphemes = (t) => {
+    const out = [];
+    if (SEG) { for (const g of SEG.segment(t)) out.push([g.index, g.index + g.segment.length]); return out; }
+    for (let i = 0; i < t.length; i++) { const c = t.charCodeAt(i); const n = c >= 0xd800 && c <= 0xdbff && i + 1 < t.length ? 2 : 1; out.push([i, i + n]); i += n - 1; }
+    return out;
+  };
+  // Largest character boundary ≤ i (so a typewriter reveal never ends half-way through an emoji).
+  const snapBack = (t, i) => { if (i <= 0 || i >= t.length) return i; let b = 0; for (const [a, e] of E.graphemes(t)) { if (e <= i) b = e; else break; } return b; };
   E.textCanvas = (c, reveal, l) => {
     const tx = c.text;
     const U = RS.creative && l != null ? RS.creative.unitAnim(c, l) : null; // {mode:'word'|'letter', at(i, n, unit) -> state}
@@ -604,7 +616,7 @@
     const widths = plain.map((t) => g0.measureText(t || ' ').width);
     if (U) {
       const units = [];
-      lines.forEach((runs, li) => { const t = plain[li]; if (U.mode === 'letter') { for (let i = 0; i < t.length; i++) if (t[i] !== ' ') units.push([li, i, i + 1]); } else { const re = /\S+/g; let m; while ((m = re.exec(t))) units.push([li, m.index, m.index + m[0].length]); } });
+      lines.forEach((runs, li) => { const t = plain[li]; if (U.mode === 'letter') { for (const [a, b] of E.graphemes(t)) if (t.slice(a, b).trim()) units.push([li, a, b]); } else { const re = /\S+/g; let m; while ((m = re.exec(t))) units.push([li, m.index, m.index + m[0].length]); } });
       states = units.map((u, i) => Object.assign({ li: u[0], a: u[1], b: u[2] }, U.at(i, units.length)));
     }
     const key = JSON.stringify(tx) + '|' + (reveal == null ? '' : reveal) + '|' + (states ? JSON.stringify(states.map((q) => [q.dx, q.dy, q.s, q.al, q.blur, q.r].map((v) => Math.round((v || 0) * 100)))) : '');
@@ -635,8 +647,8 @@
       let x0 = pad;
       if (tx.align === 'center') x0 = (cv.width - lw) / 2; else if (tx.align === 'right') x0 = cv.width - pad - lw;
       const y = pad + lh * li + lh / 2;
-      const vis = Math.max(0, Math.min(t.length, left)); left -= t.length + 1;
-      const hlAt = []; runs.forEach((r) => { for (const _ of r.t) hlAt.push(r.hl); });
+      const vis = snapBack(t, Math.max(0, Math.min(t.length, left))); left -= t.length + 1;
+      const hlAt = []; runs.forEach((r) => { for (let k = 0; k < r.t.length; k++) hlAt.push(r.hl); }); // one entry per code unit (indexes below are code units)
       const xAt = (i) => x0 + (i ? g.measureText(t.slice(0, i)).width : 0);
       const spans = states ? states.filter((q) => q.li === li).map((q) => ({ a: q.a, b: q.b, q })) : [{ a: 0, b: t.length, q: null }];
       for (const sp of spans) {

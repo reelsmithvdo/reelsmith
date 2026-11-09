@@ -733,3 +733,11 @@ html.compact .kb-main { flex-direction: column; }
 html.compact .kb-nav { width: 100%; max-height: 34%; border-right: 0; border-bottom: 1px solid var(--line); }
 html.compact .kb-article { padding: 16px 16px 30px; }
 #site-links[hidden] { display: none !important; }
+.path-input.clickable { cursor: pointer; }
+.path-input.clickable:hover { border-color: var(--accent); }
+.path-input.chosen { color: var(--text); }
+
+.credit { display: inline-flex; align-items: center; gap: 5px; color: var(--text-3); }
+.credit .heart { flex: none; }
+.credit a { color: var(--text-2); }
+.site-links .credit { flex-basis: 100%; justify-content: center; margin-top: 2px; }
