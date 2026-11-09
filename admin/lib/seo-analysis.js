@@ -142,7 +142,7 @@ function analyzeSeo(input) {
     text: htmlToText(m[1])
   }));
   const internal = links.filter(
-    (l) => /^\/(?!\/)|^#|^https?:\/\/(www\.)?algomatryx\.com/i.test(l.href)
+    (l) => /^\/(?!\/)|^#|^https?:\/\/(www\.)?reelsmithapp\.com/i.test(l.href)
   );
   const outbound = links.filter((l) => /^https?:\/\//i.test(l.href) && !internal.includes(l));
   const imgTags = input.contentHtml.match(/<img\b[^>]*>/gi) ?? [];
@@ -269,7 +269,7 @@ function analyzeSeo(input) {
     "internal-links",
     "Internal links",
     internal.length ? "good" : "bad",
-    internal.length ? `${internal.length} internal link${internal.length === 1 ? "" : "s"}. Good.` : "No links to other pages on algomatryx.com. Link to a service page and a related post."
+    internal.length ? `${internal.length} internal link${internal.length === 1 ? "" : "s"}. Good.` : "No links to other Reelsmith pages. Link to a tutorial, a doc page or the editor."
   );
   add(
     "outbound-links",

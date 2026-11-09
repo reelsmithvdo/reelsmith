@@ -17,7 +17,7 @@ export default async function Posts({ searchParams }) {
     <>
       <div className="page-head">
         <span className="ic"><Icon name="posts" size={22} /></span>
-        <div><h1>Posts</h1><p>Blog posts and tutorials. Publish site to update reelsmithapp.com.</p></div>
+        <div><h1>Posts</h1><p>Blog posts and tutorials. Published changes go live on reelsmithapp.com automatically.</p></div>
         <div className="actions"><Link href="/posts/new" className="btn primary"><Icon name="plus" />New post</Link></div>
       </div>
       <form className="toolbar">
