@@ -3,27 +3,46 @@ import { useEffect, useRef, useState } from 'react';
 import Icon from './Icon';
 import { adminSrc } from '@/lib/assets';
 
-// Shrink big photos before upload (faster pages = better SEO). GIFs are kept as they are.
-export async function prepareImage(file, max = 1600) {
-  if (file.type === 'image/gif') return { blob: file, width: 0, height: 0, type: file.type };
+// Shrink and compress before upload — the database has 512 MB, and small images make fast pages (SEO).
+// Like the Algo Matryx admin, but in the browser: longest side ≤ 1600 px, WebP (keeps transparency) at
+// quality 0.82, stepping down until the file is under TARGET. GIFs are kept as they are (animation).
+export const TARGET = 400 * 1024;
+const encode = (cv, type, q) => new Promise((r) => cv.toBlob(r, type, q));
+export async function prepareImage(file) {
+  if (file.type === 'image/gif') return { blob: file, width: 0, height: 0, type: file.type, before: file.size };
   const bmp = await createImageBitmap(file);
-  const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
-  const w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
-  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
-  cv.getContext('2d').drawImage(bmp, 0, 0, w, h);
-  const type = file.type === 'image/png' && k === 1 ? 'image/png' : 'image/webp';
-  const blob = await new Promise((r) => cv.toBlob(r, type, 0.86));
-  return { blob, width: w, height: h, type };
+  const draw = (max) => {
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement('canvas'); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+    cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height);
+    return cv;
+  };
+  let cv = draw(1600), blob = null;
+  // Browsers without a WebP encoder return PNG: then use JPEG, or PNG for images with transparency.
+  const probe = await encode(cv, 'image/webp', 0.82);
+  let type = probe && probe.type === 'image/webp' ? 'image/webp' : null;
+  if (!type) {
+    const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    let alpha = false; for (let i = 3; i < d.length; i += 4 * 7) if (d[i] < 250) { alpha = true; break; }
+    type = alpha ? 'image/png' : 'image/jpeg';
+  }
+  for (const [max, q] of [[1600, 0.82], [1600, 0.74], [1600, 0.66], [1280, 0.7], [1024, 0.68]]) {
+    if (cv.width !== Math.round(bmp.width * Math.min(1, max / Math.max(bmp.width, bmp.height)))) cv = draw(max);
+    blob = type === 'image/webp' && max === 1600 && q === 0.82 ? probe : await encode(cv, type, q);
+    if (blob.size <= TARGET || type === 'image/png') break;
+  }
+  if (type !== 'image/png' && file.size < blob.size && Math.max(bmp.width, bmp.height) <= 1600 && file.type === type) blob = file; // already smaller
+  return { blob, width: cv.width, height: cv.height, type: blob.type || type, before: file.size };
 }
 export async function uploadImage(file, alt = '') {
   const p = await prepareImage(file);
   const fd = new FormData();
-  fd.append('file', new File([p.blob], file.name, { type: p.type }));
+  fd.append('file', new File([p.blob], file.name.replace(/\.\w+$/, '') + ({ 'image/webp': '.webp', 'image/jpeg': '.jpg', 'image/png': '.png' }[p.type] || ''), { type: p.type }));
   fd.append('name', file.name); fd.append('alt', alt); fd.append('width', p.width); fd.append('height', p.height);
   const r = await fetch('/admin/api/media', { method: 'POST', body: fd });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error || 'Upload failed');
-  return j;
+  return Object.assign(j, { before: p.before });
 }
 
 export function MediaGrid({ items, selected, onSelect }) {
@@ -57,7 +76,7 @@ export default function MediaPicker({ onPick, onClose, title = 'Choose an image'
             onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('over'); upload([...e.dataTransfer.files]); }}>
             <Icon name="upload" /> Drop images here or <button className="btn small" onClick={() => input.current.click()}>Upload</button>
             <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => upload([...e.target.files])} />
-            <div className="hint">Large photos are resized to 1600 px and saved as WebP automatically.</div>
+            <div className="hint">Images are resized to 1600 px and compressed to WebP (usually under 400 KB) before upload.</div>
           </div>
           {busy && <div className="okmsg">{busy}</div>}{err && <div className="err">{err}</div>}
           <MediaGrid items={items} selected={sel && sel.id} onSelect={(m) => { setSel(m); setAlt(m.alt); }} />

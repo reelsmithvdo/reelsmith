@@ -4,6 +4,9 @@ import Icon from './Icon';
 import { MediaGrid, uploadImage } from './MediaPicker';
 import { adminSrc } from '@/lib/assets';
 
+const kb = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+const DB_LIMIT = 512 * 1048576; // MongoDB Atlas free tier
+
 export default function MediaLibrary() {
   const [items, setItems] = useState([]);
   const [sel, setSel] = useState(null);
@@ -13,7 +16,7 @@ export default function MediaLibrary() {
   async function upload(files) {
     for (const f of files) {
       setMsg({ ok: 'Uploading ' + f.name + '…' });
-      try { const m = await uploadImage(f); setItems((x) => [m, ...x]); setSel(m); setMsg({ ok: 'Uploaded ' + f.name }); } catch (e) { setMsg({ err: e.message }); }
+      try { const m = await uploadImage(f); setItems((x) => [m, ...x]); setSel(m); setMsg({ ok: `Uploaded ${f.name} — ${kb(m.before)} → ${kb(m.size)}` }); } catch (e) { setMsg({ err: e.message }); }
     }
   }
   async function saveAlt() {
@@ -33,7 +36,8 @@ export default function MediaLibrary() {
         <div className="drop" onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('over'); }} onDragLeave={(e) => e.currentTarget.classList.remove('over')} onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove('over'); upload([...e.dataTransfer.files]); }}>
           <Icon name="upload" /> Drop images here or <button className="btn small" onClick={() => input.current.click()}>Upload</button>
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => upload([...e.target.files])} />
-          <div className="hint">Images are resized to 1600 px and converted to WebP for fast pages.</div>
+          <div className="hint">Images are resized to 1600 px and compressed to WebP (usually under 400 KB) before upload.</div>
+          <div className="hint">{items.length} image{items.length === 1 ? '' : 's'} · {kb(items.reduce((n, m) => n + (m.size || 0), 0))} of the 512 MB database ({(items.reduce((n, m) => n + (m.size || 0), 0) / DB_LIMIT * 100).toFixed(1)} %)</div>
         </div>
         {msg && (msg.err ? <div className="err">{msg.err}</div> : <div className="okmsg">{msg.ok}</div>)}
         <MediaGrid items={items} selected={sel && sel.id} onSelect={setSel} />
