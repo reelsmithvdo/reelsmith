@@ -19,6 +19,8 @@
   // so static files stay free (routing them through the Worker would count against its quota).
   "routes": [{ "pattern": "reelsmithapp.com", "custom_domain": true }],
   // Hourly scheduled publish (free Cron Trigger).
+  // The blog admin Worker (admin/wrangler.jsonc), reached at /admin through this binding.
+  "services": [{ "binding": "ADMIN", "service": "reelsmith-admin" }],
   "triggers": { "crons": ["17 * * * *"] },
   // Rebuild the static pages from content/posts.json (written by the admin's Publish site) on every deploy.
   "build": { "command": "node scripts/build-site.js" },
