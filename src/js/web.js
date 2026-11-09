@@ -282,7 +282,7 @@
     ]],
     ['Help', [
       ['Reelsmith Help', 'help', 'F1'], ['Keyboard Shortcuts', 'shortcuts', MOD + '/'], ['Your First Edit', 'helpFirstEdit'], ['Troubleshooting & FAQ', 'helpFaq'], sep,
-      ['Report a Bug…', 'reportBug'], ['Request a Feature…', 'requestFeature'], ['Cookie Settings…', 'cookieSettings'], sep,
+      ['Report a Bug…', 'reportBug'], ['Request a Feature…', 'requestFeature'], ['Contact Us…', 'contact'], ['Cookie Settings…', 'cookieSettings'], sep,
       ['About Reelsmith', 'about'],
     ]],
   ];
@@ -502,7 +502,8 @@
         side('keyboard', 'Keyboard Shortcuts', () => RS.cmd('shortcuts')),
         RS.h('div', { class: 'home-side-sep' }),
         side('bug', 'Report a Bug', () => W.feedback('bug')),
-        side('idea', 'Request a Feature', () => W.feedback('feature'))),
+        side('idea', 'Request a Feature', () => W.feedback('feature')),
+        side('mail', 'Contact Us', () => RS.cmd('contact'))),
       RS.h('main', { class: 'home-main' },
         RS.h('div', { class: 'home-hero' },
           RS.h('img', { src: 'assets/icon-256.png', alt: '', width: 96, height: 96 }),
@@ -578,6 +579,7 @@
   };
 
   const extraIcons = {
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     import: '<path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/>',
     file: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',

@@ -46,5 +46,21 @@ module.exports = {
       t.ok(b.elapsed > 2500, 'elapsed time missing');
       t.eq(await t.eval(`document.getElementById('cf-message').value`), '', 'form not cleared');
     },
+    'Contact is in the site menu, the intro, the start screen and the editor Help menu': async (t) => {
+      await t.win.loadURL(t.url + 'tools/'); await t.sleep(300);
+      t.ok(await t.eval(`!!document.querySelector('.site-head nav a[href="/contact/"]')`), 'not in the site menu');
+      await t.win.loadURL(t.url); await t.until('window.RS && RS.app ? 1 : 0', 20000); await t.sleep(300);
+      t.ok(await t.eval(`!document.getElementById('intro') || !!document.querySelector('#intro a[href="/contact/"]')`), 'not in the intro');
+      await t.eval(`RS.web.home(); 0`); await t.sleep(300);
+      t.ok(await t.eval(`[...document.querySelectorAll('.home-side-btn')].some((b) => b.textContent.includes('Contact Us'))`), 'not on the start screen');
+      await t.eval(`window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; RS.web.hideHome(); 0`);
+      if (!t.isPhone) {
+        await t.click('.menubar-btn', { index: 6, mouse: true });
+        const i = await t.eval(`[...document.querySelectorAll('.menu-drop .menu-item')].findIndex((x) => x.textContent.includes('Contact Us'))`);
+        t.ok(i >= 0, 'not in the Help menu');
+        await t.click('.menu-drop .menu-item', { index: i, mouse: true });
+        t.eq(await t.eval(`window.__opened`), ['/contact/']);
+      }
+    },
   },
 };

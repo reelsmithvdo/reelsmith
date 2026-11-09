@@ -599,6 +599,8 @@
   C.home = () => RS.web && RS.web.home();
   C.openProjectFile = async () => { if (RS.web && (await confirmDiscard())) RS.web.openProjectFile(); };
   C.downloadProject = () => RS.web && RS.web.downloadProject();
+  // Opens in a new tab so the project stays open.
+  C.contact = () => { if (RS.native && RS.native.openExternal) RS.native.openExternal('https://reelsmithapp.com/contact/'); else window.open('/contact/', '_blank', 'noopener'); };
   C.reportBug = () => RS.web && RS.web.feedback('bug');
   C.requestFeature = () => RS.web && RS.web.feedback('feature');
   C.cookieSettings = () => window.ReelsmithConsent && window.ReelsmithConsent.open();

@@ -95,7 +95,7 @@ const posts = (fromDb ? fromDb.filter((p) => p.section === 'blog') : readMd('blo
 const pages = Object.fromEntries(readMd('pages').map((p) => [p.slug, p]));
 
 // ---------------------------------------------------------------- layout
-const NAV = [['Features', '/features/'], ['Tools', '/tools/'], ['Tutorials', '/tutorials/'], ['Docs', '/docs/'], ['Blog', '/blog/']];
+const NAV = [['Features', '/features/'], ['Tools', '/tools/'], ['Tutorials', '/tutorials/'], ['Docs', '/docs/'], ['Blog', '/blog/'], ['Contact', '/contact/']];
 function layout({ title, description, urlPath, body, section, jsonld = [], ogType = 'website', image }) {
   const url = ORIGIN + urlPath;
   const fullTitle = urlPath === '/features/' ? title : `${title} | Reelsmith`;
@@ -342,7 +342,7 @@ for (const id of ['about', 'privacy', 'terms']) {
 </article></div>
 <script src="/contact.js" defer></script>`;
   const ld = { '@context': 'https://schema.org', '@type': 'ContactPage', name: 'Contact Reelsmith', url: ORIGIN + p, mainEntity: { '@type': 'Organization', name: 'Reelsmith', url: ORIGIN + '/', email: 'reelsmith.vdo@gmail.com', contactPoint: { '@type': 'ContactPoint', contactType: 'customer support', email: 'reelsmith.vdo@gmail.com', availableLanguage: ['English'] } } };
-  write(p, layout({ title: 'Contact', description: 'Contact the Reelsmith team: questions, feedback, business and press. Write to us with the form or by email and we reply within two working days.', urlPath: p, body, jsonld: [ld] }), { priority: 0.4 });
+  write(p, layout({ title: 'Contact', section: '/contact/', description: 'Contact the Reelsmith team: questions, feedback, business and press. Write to us with the form or by email and we reply within two working days.', urlPath: p, body, jsonld: [ld] }), { priority: 0.4 });
 }
 const feat = pages.features;
 if (!feat) throw new Error('content/pages/features.md missing');
