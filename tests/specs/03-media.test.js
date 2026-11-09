@@ -48,5 +48,27 @@ module.exports = {
       await t.sleep(200);
       t.eq(await t.eval(`RS.state.project.media.length`), 0);
     },
+    'Project panel: Shift-click selects a range, ⌘-click adds or removes one (real mouse)': async (t) => {
+      if (t.isTouch) t.skip('mouse modifiers');
+      await t.reset();
+      await t.page(async () => { for (let i = 0; i < 5; i++) await T.import(await T.png({ name: 'item' + i + '.png' })); });
+      await t.eval(`document.querySelector('.tab[data-tab="project"]').click(); 0`); await t.sleep(200);
+      const sel = () => t.eval(`[...document.querySelectorAll('.bin-item[data-id]')].map((x) => x.classList.contains('selected') ? 1 : 0).join('')`);
+      await t.click('.bin-item[data-id]', { index: 1 });
+      t.eq(await sel(), '01000', 'single click');
+      await t.click('.bin-item[data-id]', { index: 3, modifiers: ['shift'] });
+      t.eq(await sel(), '01110', 'shift-click range');
+      await t.click('.bin-item[data-id]', { index: 0, modifiers: ['shift'] });
+      t.eq(await sel(), '11000', 'shift-click again re-ranges from the same item');
+      await t.click('.bin-item[data-id]', { index: 4, modifiers: ['meta'] });
+      t.eq(await sel(), '11001', 'cmd-click adds');
+      await t.click('.bin-item[data-id]', { index: 0, modifiers: ['meta'] });
+      t.eq(await sel(), '01001', 'cmd-click removes');
+      await t.click('.bin-item[data-id]', { index: 2, modifiers: ['meta', 'shift'] });
+      t.eq(await sel(), '11101', 'cmd+shift adds the range from the last clicked item (0) to 2');
+      t.eq(await t.eval(`RS.state.selectedMedia.size`), 4);
+      await t.click('.bin-item[data-id]', { index: 2 });
+      t.eq(await sel(), '00100', 'plain click selects only one again');
+    },
   },
 };

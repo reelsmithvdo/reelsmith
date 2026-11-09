@@ -125,3 +125,18 @@ h3 { font-size: 19px; margin: 24px 0 8px; }
 .related h2 { font-size: 19px; margin-top: 0; }
 .related ul { padding-left: 20px; }
 .prose h2[id] { scroll-margin-top: 76px; }
+
+/* Contact page */
+.contact-alt { padding-left: 20px; }
+.contact-form { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; margin: 24px 0; }
+.cf-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.cf-row label { font-weight: 600; font-size: 15px; }
+.cf-row input, .cf-row select, .cf-row textarea { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; }
+.cf-row input:focus, .cf-row select:focus, .cf-row textarea:focus { outline: none; border-color: var(--accent); }
+.cf-row [aria-invalid] { border-color: #e5484d; }
+.cf-row textarea { resize: vertical; min-height: 140px; }
+.cf-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.cf-status { min-height: 1.4em; margin: 6px 0 12px; }
+.cf-status.ok { color: #46c27b; }
+.cf-status.err { color: #ff7b7b; }
+.contact-form button[disabled] { opacity: .6; cursor: wait; }

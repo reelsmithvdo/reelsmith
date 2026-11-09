@@ -12,7 +12,7 @@ const SRC = path.join(ROOT, 'src');
 const CONTENT = path.join(ROOT, 'content');
 const ORIGIN = 'https://reelsmithapp.com';
 const TODAY = new Date().toISOString().slice(0, 10);
-const GENERATED = ['features', 'tools', 'docs', 'tutorials', 'blog', 'about', 'privacy', 'terms'];
+const GENERATED = ['features', 'tools', 'docs', 'tutorials', 'blog', 'about', 'privacy', 'terms', 'contact'];
 
 // ---------------------------------------------------------------- help content
 const ctx = { globalThis: {} }; ctx.window = ctx.globalThis; vm.createContext(ctx);
@@ -143,8 +143,8 @@ ${body}
     <div><h4>Product</h4><a href="/">Open Editor</a><a href="/features/">Features</a><a href="/docs/browser-edition/">Browser support</a></div>
     <div><h4>Learn</h4><a href="/tools/">Free tools</a><a href="/tutorials/">Tutorials</a><a href="/docs/">Documentation</a><a href="/docs/shortcuts/">Keyboard shortcuts</a><a href="/blog/">Blog</a></div>
     <div><h4>Follow</h4><a href="https://www.youtube.com/@ReelSmithVdo" target="_blank" rel="noopener">YouTube</a><a href="https://www.facebook.com/reelsmithvdo/" target="_blank" rel="noopener">Facebook</a><a href="https://www.reddit.com/user/reelsmithvdo/" target="_blank" rel="noopener">Reddit</a></div>
-    <div><h4>Support</h4><a href="/?report=bug">Report a bug</a><a href="/?report=feature">Request a feature</a><a href="/docs/faq/">FAQ</a></div>
-    <div><h4>Reelsmith</h4><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="#" data-consent-settings>Cookie settings</a><a href="mailto:reelsmith.vdo@gmail.com">Contact</a></div>
+    <div><h4>Support</h4><a href="/contact/">Contact us</a><a href="/?report=bug">Report a bug</a><a href="/?report=feature">Request a feature</a><a href="/docs/faq/">FAQ</a></div>
+    <div><h4>Reelsmith</h4><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="#" data-consent-settings>Cookie settings</a><a href="/contact/">Contact</a></div>
   </div>
   <div class="wrap fine"><span>© ${new Date().getFullYear()} Reelsmith</span><span class="credit">Made with <svg class="heart" viewBox="0 0 24 24" width="14" height="14" aria-label="love" role="img"><path fill="#e5484d" d="M12 21s-7.5-4.6-10-9.3C.4 8.6 2.3 4.5 6.2 4.5c2.2 0 3.6 1.2 4.4 2.4h2.8c.8-1.2 2.2-2.4 4.4-2.4 3.9 0 5.8 4.1 4.2 7.2C19.5 16.4 12 21 12 21z"/></svg> by <a href="https://algomatryx.com/" target="_blank" rel="noopener">Algo Matryx</a></span></div>
 </footer>
@@ -319,6 +319,30 @@ for (const id of ['about', 'privacy', 'terms']) {
   if (!pg) throw new Error('content/pages/' + id + '.md missing');
   const p = `/${id}/`;
   write(p, layout({ title: pg.title, description: pg.description, urlPath: p, body: `<div class="wrap narrow"><article class="prose"><h1>${esc(pg.title)}</h1>${pg.updated ? `<p class="meta">Last updated ${fmtDate(pg.updated)}</p>` : ''}${markdown(pg.body, p)}</article></div>` }), { priority: 0.3, lastmod: pg.updated || TODAY });
+}
+// Contact page: a form posting to /api/contact (worker/index.js → Brevo), with src/contact.js.
+{
+  const p = '/contact/';
+  const opt = [['general', 'General question'], ['business', 'Business or partnership'], ['press', 'Press'], ['privacy', 'Privacy request'], ['other', 'Other']];
+  const body = `<div class="wrap narrow"><article class="prose">
+<h1>Contact Reelsmith</h1>
+<p class="lead">Questions, ideas or partnership requests — write to us and we reply by email, usually within two working days.</p>
+<ul class="contact-alt"><li><strong>Found a bug?</strong> <a href="/?report=bug">Report it from the editor</a> — it adds the technical details we need.</li><li><strong>Want a feature?</strong> <a href="/?report=feature">Request a feature</a>.</li><li><strong>How do I…?</strong> Try the <a href="/docs/faq/">FAQ</a>, <a href="/tutorials/">tutorials</a> and <a href="/docs/">documentation</a>.</li></ul>
+<form class="contact-form" id="contact-form" novalidate>
+  <div class="cf-row"><label for="cf-name">Your name</label><input id="cf-name" name="name" autocomplete="name" maxlength="100" required></div>
+  <div class="cf-row"><label for="cf-email">Your email</label><input id="cf-email" name="email" type="email" autocomplete="email" maxlength="200" required></div>
+  <div class="cf-row"><label for="cf-topic">Topic</label><select id="cf-topic" name="topic">${opt.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select></div>
+  <div class="cf-row"><label for="cf-message">Message</label><textarea id="cf-message" name="message" rows="7" maxlength="5000" required></textarea></div>
+  <div class="cf-hp" aria-hidden="true"><label for="cf-website">Website</label><input id="cf-website" name="website" tabindex="-1" autocomplete="off"></div>
+  <p class="small">We use your email only to answer you. Messages are delivered by our email provider, Brevo — see the <a href="/privacy/">Privacy Policy</a>.</p>
+  <p class="cf-status" role="status" aria-live="polite"></p>
+  <button class="btn big" type="submit">Send message</button>
+</form>
+<p class="small">Prefer email? Write to <a href="mailto:reelsmith.vdo@gmail.com">reelsmith.vdo@gmail.com</a>.</p>
+</article></div>
+<script src="/contact.js" defer></script>`;
+  const ld = { '@context': 'https://schema.org', '@type': 'ContactPage', name: 'Contact Reelsmith', url: ORIGIN + p, mainEntity: { '@type': 'Organization', name: 'Reelsmith', url: ORIGIN + '/', email: 'reelsmith.vdo@gmail.com', contactPoint: { '@type': 'ContactPoint', contactType: 'customer support', email: 'reelsmith.vdo@gmail.com', availableLanguage: ['English'] } } };
+  write(p, layout({ title: 'Contact', description: 'Contact the Reelsmith team: questions, feedback, business and press. Write to us with the form or by email and we reply within two working days.', urlPath: p, body, jsonld: [ld] }), { priority: 0.4 });
 }
 const feat = pages.features;
 if (!feat) throw new Error('content/pages/features.md missing');

@@ -108,9 +108,21 @@
       RS.h('div', { class: 'usage', 'data-usage': m.id })),
       // Touch screens: a visible "add to timeline" button (dragging from the panel needs a mouse).
       offline ? null : RS.h('button', { class: 'ibtn bin-add', type: 'button', title: 'Add to timeline at playhead', onclick: (e) => { e.stopPropagation(); PB.addAtPlayhead(m.id); } }, RS.icon('plus')));
+    // Like Premiere / Finder: click = only this item; ⌘/Ctrl-click = add or remove it;
+    // Shift-click = everything between the last clicked item and this one (in the order shown);
+    // ⌘/Ctrl+Shift-click adds that range to the current selection.
     el.addEventListener('click', (e) => {
-      if (!(e.shiftKey || e.metaKey)) S.selectedMedia.clear();
-      if (S.selectedMedia.has(m.id) && (e.shiftKey || e.metaKey)) S.selectedMedia.delete(m.id); else S.selectedMedia.add(m.id);
+      const toggle = e.metaKey || e.ctrlKey;
+      const shown = RS.$$('.bin-item[data-id]', pbList).map((x) => x.dataset.id);
+      const a = shown.indexOf(PB.anchor), b = shown.indexOf(m.id);
+      if (e.shiftKey && a >= 0 && b >= 0) {
+        if (!toggle) S.selectedMedia.clear();
+        for (let i = Math.min(a, b); i <= Math.max(a, b); i++) S.selectedMedia.add(shown[i]);
+      } else {
+        if (!toggle) S.selectedMedia.clear();
+        if (toggle && S.selectedMedia.has(m.id)) S.selectedMedia.delete(m.id); else S.selectedMedia.add(m.id);
+        PB.anchor = m.id;
+      }
       RS.$$('.bin-item', pbList).forEach((x) => x.classList.toggle('selected', S.selectedMedia.has(x.dataset.id)));
       pbList.focus({ preventScroll: true });
     });
@@ -120,7 +132,7 @@
     });
     el.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      if (!S.selectedMedia.has(m.id)) { S.selectedMedia = new Set([m.id]); RS.$$('.bin-item', pbList).forEach((x) => x.classList.toggle('selected', S.selectedMedia.has(x.dataset.id))); }
+      if (!S.selectedMedia.has(m.id)) { S.selectedMedia = new Set([m.id]); PB.anchor = m.id; RS.$$('.bin-item', pbList).forEach((x) => x.classList.toggle('selected', S.selectedMedia.has(x.dataset.id))); }
       RS.contextMenu(e.clientX, e.clientY, [
         { label: 'Add to Timeline at Playhead', disabled: offline, run: () => PB.addAtPlayhead(m.id) },
         { label: 'Open in Source Monitor', disabled: offline, run: () => RS.sourceMonitor.load(m.id) },
@@ -158,7 +170,7 @@
     if (!RS.getMedia(mediaId)) return;
     RS.emit('show-tab', 'project');
     pbSearch.value = '';
-    S.selectedMedia = new Set([mediaId]);
+    S.selectedMedia = new Set([mediaId]); PB.anchor = mediaId;
     PB.render();
     const el = pbList.querySelector(`[data-id="${mediaId}"]`);
     if (el) el.scrollIntoView({ block: 'nearest' });

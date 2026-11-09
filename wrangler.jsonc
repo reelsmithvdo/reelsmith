@@ -15,7 +15,10 @@
   "vars": {
     // Bug reports / feature requests become issues here. Make this repository PRIVATE
     // (reports can contain email addresses). Add the GITHUB_TOKEN secret in the dashboard.
-    "FEEDBACK_REPO": "reelsmithvdo/reelsmith-feedback"
+    "FEEDBACK_REPO": "reelsmithvdo/reelsmith-feedback",
+    // Contact form (/contact/): messages are emailed here through Brevo (secret BREVO_API_KEY in the dashboard).
+    "CONTACT_TO": "reelsmith.vdo@gmail.com",
+    "CONTACT_FROM": "reelsmith.vdo@gmail.com"
   },
   // Custom domain (bought through Cloudflare). www → root is a Redirect Rule in the dashboard,
   // so static files stay free (routing them through the Worker would count against its quota).

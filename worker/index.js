@@ -6,16 +6,18 @@
 // Setup (once, in the Cloudflare dashboard → reelsmith → Settings → Variables and Secrets):
 //   GITHUB_TOKEN  (Secret)  fine-grained token with "Issues: Read and write" on the feedback repo
 //   FEEDBACK_REPO (Text)    set in wrangler.jsonc, e.g. reelsmithvdo/reelsmith-feedback (keep it PRIVATE)
+//   BREVO_API_KEY (Secret)  Brevo API key (starts with xkeysib-) for the contact form, POST /api/contact
+//   CONTACT_TO / CONTACT_FROM (Text, wrangler.jsonc)  where messages go / the Brevo-verified sender
 
 const json = (obj, status = 200) => new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
 // Stop accidental @mentions / issue links pinging people, and cap lengths.
 const clean = (s, max) => String(s || '').slice(0, max).replace(/@/g, '@​').replace(/\r/g, '');
 
-async function rateLimited(ip) {
-  // Per-location, best effort: at most 5 reports per IP per 10 minutes.
+async function rateLimited(ip, kind = 'feedback') {
+  // Per-location, best effort: at most 5 reports (or messages) per IP per 10 minutes.
   const cache = caches.default;
-  const key = new Request('https://rate.reelsmith.internal/' + encodeURIComponent(ip));
+  const key = new Request('https://rate.reelsmith.internal/' + kind + '/' + encodeURIComponent(ip));
   const hit = await cache.match(key);
   const n = hit ? +(await hit.text()) : 0;
   if (n >= 5) return true;
@@ -68,6 +70,45 @@ async function feedback(request, env) {
   return json({ ok: true });
 }
 
+// Contact form → an email to the Reelsmith inbox through Brevo's transactional API. The visitor's address is
+// the Reply-To, so answering is one click. The API key stays a Worker secret (never in the page).
+const TOPICS = { general: 'General question', business: 'Business or partnership', press: 'Press', privacy: 'Privacy request', other: 'Other' };
+async function contact(request, env) {
+  if (request.method !== 'POST') return json({ ok: false, error: 'POST only' }, 405);
+  if (+(request.headers.get('content-length') || 0) > 32 * 1024) return json({ ok: false, error: 'Too large' }, 413);
+  let p;
+  try { p = await request.json(); } catch { return json({ ok: false, error: 'Bad request' }, 400); }
+  if (p.website || (p.elapsed != null && p.elapsed < 2500)) return json({ ok: true }); // bots
+  const name = String(p.name || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 100);
+  const email = String(p.email || '').trim().slice(0, 200);
+  const topic = TOPICS[p.topic] ? p.topic : 'general';
+  const message = String(p.message || '').replace(/\r/g, '').trim().slice(0, 5000);
+  if (!name) return json({ ok: false, error: 'Please enter your name' }, 400);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok: false, error: 'Please enter a valid email address' }, 400);
+  if (message.length < 10) return json({ ok: false, error: 'Please write a little more (at least 10 characters)' }, 400);
+  if (!env.BREVO_API_KEY || !env.CONTACT_TO) return json({ ok: false, error: 'The contact form is not set up yet — please email reelsmith.vdo@gmail.com' }, 503);
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  if (await rateLimited(ip, 'contact')) return json({ ok: false, error: 'Too many messages — please wait a few minutes' }, 429);
+  const country = (request.cf && request.cf.country) || '';
+  const text = `${message}\n\n---\nFrom: ${name} <${email}>\nTopic: ${TOPICS[topic]}${country ? `\nCountry: ${country}` : ''}\nSent from the contact form on reelsmithapp.com`;
+  const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': env.BREVO_API_KEY, accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      sender: { name: 'Reelsmith contact form', email: env.CONTACT_FROM || env.CONTACT_TO },
+      to: [{ email: env.CONTACT_TO, name: 'Reelsmith' }],
+      replyTo: { email, name },
+      subject: `[${TOPICS[topic]}] ${name}`,
+      textContent: text,
+    }),
+  });
+  if (!r.ok) {
+    console.log('Brevo send failed', r.status, (await r.text()).slice(0, 500));
+    return json({ ok: false, error: 'Could not send right now — please email reelsmith.vdo@gmail.com' }, 502);
+  }
+  return json({ ok: true });
+}
+
 // /admin is the blog dashboard: a separate Worker (Next.js, admin/) reached only through this service
 // binding, so it has no public address of its own. The scheduler header is internal-only: it is removed from
 // visitors' requests here and added only by the hourly cron below.
@@ -83,6 +124,7 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/feedback') return feedback(request, env);
+    if (url.pathname === '/api/contact') return contact(request, env);
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return toAdmin(request, env);
     return env.ASSETS.fetch(request);
   },

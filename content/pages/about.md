@@ -13,7 +13,7 @@ Reelsmith is a free video editor that runs in your web browser. It is built for 
 Modern browsers can decode and encode video, run audio processing and use the graphics chip. Reelsmith uses those built-in capabilities to preview your edit in real time and export finished MP4 or WebM files on your device.
 
 ## Get in touch
-- Email: [reelsmith.vdo@gmail.com](mailto:reelsmith.vdo@gmail.com)
+- [Contact form](/contact/) or email [reelsmith.vdo@gmail.com](mailto:reelsmith.vdo@gmail.com)
 - Found a problem or have an idea? Use [Report a bug](/?report=bug) or [Request a feature](/?report=feature). Every report is read.
 
 ## Learn more

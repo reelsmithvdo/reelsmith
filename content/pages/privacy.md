@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How Reelsmith handles your data. Your videos are processed on your own computer and never uploaded.
-updated: 2026-11-09
+updated: 2026-11-10
 ---
 Reelsmith is designed so that your videos, images and audio stay on your computer. This page explains what data is involved when you use the website.
 
@@ -21,6 +21,9 @@ Clearing your browser's data for reelsmithapp.com deletes all of this.
 
 ## Auto captions
 The first time you generate captions, the speech-recognition software and model are downloaded from jsDelivr and Hugging Face. Those services see a normal download request (such as your IP address). Your audio is processed on your device and is never sent to them.
+
+## Contact form
+If you write to us through the [contact form](/contact/), we receive your name, email address, topic and message, and the country your request came from. The message is delivered to our inbox by our email provider, **Brevo** (Sendinblue SAS, France), which processes it only to deliver it. We use it only to reply to you and keep it in our mailbox for as long as needed to handle your request. You can ask us to delete it at any time.
 
 ## Bug reports and feature requests
 If you send a report, we receive what you type, the email address if you give one, and — for bug reports, only if you leave the box ticked — technical details (browser version, screen size, sequence size and recent error messages). No media files are sent. Reports are stored as private issues on GitHub, which we use to track them, and are used only to improve Reelsmith and to reply to you.
