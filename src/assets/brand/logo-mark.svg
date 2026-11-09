@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Reelsmith app icon (original artwork): a film reel whose hub is a play button, above a timeline. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2f38"/>
+      <stop offset="1" stop-color="#121418"/>
+    </linearGradient>
+    <linearGradient id="reel" x1="0.15" y1="0.1" x2="0.85" y2="0.95">
+      <stop offset="0" stop-color="#ffc35e"/>
+      <stop offset="0.55" stop-color="#f0a83a"/>
+      <stop offset="1" stop-color="#ff6a3d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#f0a83a" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#f0a83a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <mask id="reelCut">
+      <rect width="1024" height="1024" fill="#fff"/>
+      <!-- five sprocket windows around the hub -->
+      <g fill="#000">
+        <circle cx="512" cy="232" r="62"/>
+        <circle cx="512" cy="232" r="62" transform="rotate(72 512 430)"/>
+        <circle cx="512" cy="232" r="62" transform="rotate(144 512 430)"/>
+        <circle cx="512" cy="232" r="62" transform="rotate(216 512 430)"/>
+        <circle cx="512" cy="232" r="62" transform="rotate(288 512 430)"/>
+      </g>
+      <!-- play-shaped hub -->
+      <path d="M478 372 L478 488 L572 430 Z" fill="#000" stroke="#000" stroke-width="22" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+
+  <!-- macOS icon body: 824×824 rounded square with soft shadow -->
+  <g filter="url(#shadow)">
+    <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#bg)"/>
+  </g>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#glow)"/>
+  <rect x="100" y="100" width="824" height="824" rx="186" fill="url(#shine)"/>
+  <rect x="101.5" y="101.5" width="821" height="821" rx="185" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
+
+  <!-- film reel -->
+  <g filter="url(#soft)">
+    <circle cx="512" cy="430" r="250" fill="url(#reel)" mask="url(#reelCut)"/>
+  </g>
+  <circle cx="512" cy="430" r="250" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="4"/>
+  <!-- film strip leaving the reel -->
+  <path d="M760 455 C 800 560, 790 640, 742 690" fill="none" stroke="#f0a83a" stroke-width="26" stroke-linecap="round" opacity="0.85"/>
+
+  <!-- timeline with clips and playhead -->
+  <g>
+    <rect x="212" y="730" width="600" height="104" rx="22" fill="#0b0d10" opacity="0.85"/>
+    <rect x="232" y="750" width="186" height="28" rx="8" fill="#4f86d6"/>
+    <rect x="428" y="750" width="248" height="28" rx="8" fill="#8a5bc4"/>
+    <rect x="686" y="750" width="106" height="28" rx="8" fill="#4f86d6"/>
+    <rect x="232" y="788" width="300" height="26" rx="8" fill="#2fa57a"/>
+    <rect x="542" y="788" width="250" height="26" rx="8" fill="#2fa57a"/>
+    <rect x="583" y="720" width="10" height="124" rx="5" fill="#ff5a5f"/>
+    <path d="M570 712 h36 v14 l-18 16 l-18 -16 z" fill="#ff5a5f"/>
+  </g>
+</svg>

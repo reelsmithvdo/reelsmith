@@ -107,7 +107,8 @@ function layout({ title, description, urlPath, body, section, jsonld = [], ogTyp
 <meta property="og:url" content="${url}">
 <meta property="og:image" content="${img}">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/assets/icon-64.png">
+<link rel="icon" href="/assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/brand/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/site.css">
