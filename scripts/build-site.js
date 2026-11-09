@@ -132,6 +132,7 @@ ${body}
     <div><a class="logo" href="/features/"><img src="/assets/icon-64.png" alt="" width="24" height="24">Reelsmith</a><p>Free video editor in your browser. Your files stay on your computer.</p></div>
     <div><h4>Product</h4><a href="/">Open Editor</a><a href="/features/">Features</a><a href="/docs/browser-edition/">Browser support</a></div>
     <div><h4>Learn</h4><a href="/tutorials/">Tutorials</a><a href="/docs/">Documentation</a><a href="/docs/shortcuts/">Keyboard shortcuts</a><a href="/blog/">Blog</a></div>
+    <div><h4>Follow</h4><a href="https://www.youtube.com/@ReelSmithVdo" target="_blank" rel="noopener">YouTube</a><a href="https://www.facebook.com/reelsmithvdo/" target="_blank" rel="noopener">Facebook</a><a href="https://www.reddit.com/user/reelsmithvdo/" target="_blank" rel="noopener">Reddit</a></div>
     <div><h4>Support</h4><a href="/?report=bug">Report a bug</a><a href="/?report=feature">Request a feature</a><a href="/docs/faq/">FAQ</a></div>
     <div><h4>Reelsmith</h4><a href="/about/">About</a><a href="/privacy/">Privacy</a><a href="/terms/">Terms</a><a href="#" data-consent-settings>Cookie settings</a><a href="mailto:reelsmith.vdo@gmail.com">Contact</a></div>
   </div>
@@ -224,7 +225,9 @@ if (!feat) throw new Error('content/pages/features.md missing');
 write('/features/', layout({
   title: feat.title, description: feat.description, urlPath: '/features/', section: '/features/',
   jsonld: [{ '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'Reelsmith', applicationCategory: 'MultimediaApplication', operatingSystem: 'Web browser (Chrome, Edge, Safari, Firefox)', url: ORIGIN + '/', description: feat.description, image: ORIGIN + '/assets/og.jpg', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' } },
-    { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Reelsmith', url: ORIGIN + '/' }],
+    { '@context': 'https://schema.org', '@type': 'WebSite', name: 'Reelsmith', url: ORIGIN + '/' },
+    { '@context': 'https://schema.org', '@type': 'Organization', name: 'Reelsmith', url: ORIGIN + '/', logo: ORIGIN + '/assets/brand/logo-mark-1024.png', email: 'reelsmith.vdo@gmail.com',
+      sameAs: ['https://www.youtube.com/@ReelSmithVdo', 'https://www.facebook.com/reelsmithvdo/', 'https://www.reddit.com/user/reelsmithvdo/'] }],
   body: `<section class="hero"><div class="wrap">
 <h1>${esc(feat.headline || feat.title)}</h1>
 <p class="lead">${inline(feat.subhead || feat.description)}</p>

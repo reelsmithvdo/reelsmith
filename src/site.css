@@ -84,7 +84,7 @@ h3 { font-size: 19px; margin: 24px 0 8px; }
 .features h3 { color: var(--text); }
 
 .site-foot { border-top: 1px solid var(--line); background: #0e1013; padding: 36px 0 26px; font-size: 14px; }
-.site-foot .cols { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 26px; }
+.site-foot .cols { display: grid; grid-template-columns: 2fr repeat(5, 1fr); gap: 26px; }
 .site-foot h4 { margin: 0 0 8px; color: var(--text-3); font-size: 12px; text-transform: uppercase; letter-spacing: .7px; }
 .site-foot a:not(.logo) { display: block; color: var(--text-2); padding: 2px 0; }
 .site-foot p { color: var(--text-3); margin: 8px 0 0; }

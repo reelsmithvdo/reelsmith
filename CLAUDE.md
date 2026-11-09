@@ -40,6 +40,11 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
 | Bug reports / feature requests | private repo github.com/reelsmithvdo/reelsmith-feedback (issues created by the Worker; secret `GITHUB_TOKEN` in Cloudflare) |
 | Hosting | Cloudflare Workers project `reelsmith` (static assets from `src/`, `worker/index.js` for `/api/feedback`); every push to `main` deploys in ~1 min |
 | Domain | reelsmithapp.com (Cloudflare Registrar). `www` → root redirect still to be set up (Rules ▸ Redirect from WWW to root) |
+| YouTube | https://www.youtube.com/@ReelSmithVdo (name "Reelsmith", banner/description/links set 2026-11-09) |
+| Facebook page | https://www.facebook.com/reelsmithvdo/ |
+| Reddit | https://www.reddit.com/user/reelsmithvdo/ (the Chrome extension cannot open reddit.com — the owner edits it) |
+| Bing Webmaster Tools | site added 2026-11-09 |
+| Brand images | `src/assets/brand/` (YouTube banner, Facebook cover, logos, profile picture, favicons) |
 | Google Search Console | Domain property `sc-domain:reelsmithapp.com`; service account `reelsmith-seo@reel-smith.iam.gserviceaccount.com` (key stays in ~/Downloads — **never commit it**) |
 
 ## How the code is organised
