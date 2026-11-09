@@ -690,7 +690,7 @@ html.compact .home { top: 46px; }
 html.compact #statusbar { display: none; }
 html.compact #workspace { display: flex; flex-direction: column; gap: 4px; padding: 4px 4px calc(60px + env(safe-area-inset-bottom)); }
 html.compact #workspace > .splitter { display: none; }
-html.compact #workspace > section[data-panels="program"] { flex: 0 0 auto; height: 40%; min-height: 200px; }
+html.compact #workspace > section[data-panels="program"] { flex: 0 0 auto; height: 33%; min-height: 180px; }
 html.compact #workspace > section[data-panels="timeline"] { flex: 1 1 auto; min-height: 0; }
 html.compact #workspace > section[data-tabs] {
   position: fixed; z-index: 800; left: 0; right: 0; bottom: calc(56px + env(safe-area-inset-bottom)); height: min(62%, 560px);

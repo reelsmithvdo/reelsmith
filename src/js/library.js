@@ -224,7 +224,10 @@
         S.selection.add(a.id);
       }
     });
-    if (S.playhead < t || S.playhead > t + it.dur) RS.engine.seek(t + 0.05);
+    // Graphics animate in from nothing, so their first frame is empty: show a moment where they're visible.
+    RS.engine.seek(Math.min(t + 0.7, t + it.dur / 2));
+    const added = S.project.clips.find((x) => x.type === 'graphic' && x.start === t && x.graphic && x.graphic.kind === id);
+    RS.toast(`Added ${it.name}${added ? ' on ' + RS.getTrack(added.trackId).name : ''}` + (it.sound ? ' with its sound' : ''), 'ok');
     RS.emit('show-tab', 'effectControls');
   };
 

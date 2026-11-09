@@ -8,6 +8,8 @@
   let HEAD_W = PHONE.matches ? 100 : 156;
   const RULER_H = 30;
   const TRACK_H = { video: 62, audio: 54, caption: 34 };
+  const setTrackH = (phone) => Object.assign(TRACK_H, phone ? { video: 46, audio: 40, caption: 28 } : { video: 62, audio: 54, caption: 34 });
+  setTrackH(PHONE.matches);
   const SNAP_PX = 9;
   const MIN_ZOOM = 0.2, MAX_ZOOM = 1500;
 
@@ -94,6 +96,7 @@
     const zoomBar = RS.h('div', { class: 'tl-zoombar', style: { paddingLeft: HEAD_W + 'px' } }, zbTrack);
     PHONE.addEventListener('change', () => {
       HEAD_W = PHONE.matches ? 100 : 156;
+      setTrackH(PHONE.matches);
       corner.style.width = HEAD_W + 'px';
       zoomBar.style.paddingLeft = HEAD_W + 'px';
       TL.render();

@@ -109,6 +109,30 @@
     RS.toast('Caption engine removed', 'ok');
   };
 
+  // Whisper's end times often run on into the following silence. Fit each caption to the speech that is
+  // really inside it, using the audio itself (16 kHz mono samples starting at sequence time t0).
+  AC.fitToSpeech = (caps, samples, t0) => {
+    const SR = 16000, blk = SR / 50; // 20 ms blocks
+    const n = Math.floor(samples.length / blk);
+    const env = new Float32Array(n);
+    let top = 0;
+    for (let i = 0; i < n; i++) { let m = 0; for (let j = i * blk, e = j + blk; j < e; j++) { const v = samples[j] < 0 ? -samples[j] : samples[j]; if (v > m) m = v; } env[i] = m; if (m > top) top = m; }
+    const thr = Math.max(0.006, top * 0.06);
+    const out = caps.map((c) => Object.assign({}, c));
+    for (const c of out) {
+      const a = Math.max(0, Math.floor((c.start - t0) * 50)), b = Math.min(n, Math.ceil((c.end - t0) * 50));
+      let first = -1, last = -1;
+      for (let i = a; i < b; i++) if (env[i] > thr) { if (first < 0) first = i; last = i; }
+      if (first < 0) continue; // no clear speech found: keep Whisper's timing
+      const s0 = t0 + first / 50 - 0.12, e0 = t0 + (last + 1) / 50 + 0.3;
+      if (s0 > c.start) c.start = s0;
+      if (e0 < c.end) c.end = e0;
+      if (c.end - c.start < 0.6) c.end = c.start + 0.6;
+    }
+    for (let i = 0; i + 1 < out.length; i++) if (out[i].end > out[i + 1].start) out[i].end = out[i + 1].start;
+    return out.filter((c) => c.end - c.start > 0.05);
+  };
+
   AC.open = async () => {
     if (RS.seqDuration() <= 0) return RS.toast('Add a clip with speech to the timeline first');
     const web = !RS.native;
@@ -190,7 +214,7 @@
       if (!RS.native) show(0, o.needsDownload ? 'Downloading the caption engine…' : 'Starting the caption engine…');
       const segs = await engine().transcribe({ samples, model: o.model, language: o.language, translate: o.translate });
       if (cancelled) throw new Error('cancelled');
-      const caps = AC.toCaptions(segs, o.t0).filter((c) => c.start < o.t1);
+      const caps = AC.fitToSpeech(AC.toCaptions(segs, o.t0), samples, o.t0).filter((c) => c.start < o.t1);
       dlg.close();
       if (!caps.length) return RS.toast('No speech was recognised in this range', 'warn', 5000);
       RS.commit('Auto-generate captions', () => {

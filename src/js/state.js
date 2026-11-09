@@ -330,9 +330,15 @@
       linkId: null, props: {}, kf: {},
     }, o);
     c.props = Object.assign({}, RS.DEFAULT_PROPS, o.props || {});
-    if (c.type === 'text') c.text = Object.assign({}, RS.DEFAULT_TEXT, o.text || {});
+    // Default title / shape sizes are designed for 1080p: scale them to the sequence (720p, 4K, vertical…).
+    const set = (RS.state.project && RS.state.project.settings) || { width: 1920, height: 1080 };
+    const k = Math.min(set.width, set.height) / 1080;
+    if (c.type === 'text') {
+      c.text = Object.assign({}, RS.DEFAULT_TEXT, o.text || {});
+      if (!(o.text && o.text.size)) c.text.size = Math.max(8, Math.round(RS.DEFAULT_TEXT.size * k));
+    }
     if (c.type === 'solid') c.color = o.color || '#2a6fdb';
-    if (c.type === 'shape') c.shape = Object.assign({ kind: 'rect', w: 600, h: 340, radius: 0, fill: '#f0a83a', fillOn: true, stroke: '#ffffff', strokeW: 0 }, o.shape || {});
+    if (c.type === 'shape') c.shape = Object.assign({ kind: 'rect', w: Math.round(600 * k), h: Math.round(340 * k), radius: 0, fill: '#f0a83a', fillOn: true, stroke: '#ffffff', strokeW: 0 }, o.shape || {});
     return c;
   };
 

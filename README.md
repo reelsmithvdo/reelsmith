@@ -9,6 +9,16 @@ npm start
 ```
 A snapshot of the desktop-only version is kept in the `desktop` branch / `desktop-v1.0` tag.
 
+## Tests
+```
+npm test                      # every feature, in 4 modes: web, phone, tablet, desktop app
+npm test -- captions          # only spec files whose name contains "captions"
+npm test -- --mode=phone      # one mode
+npm test -- --slow            # also the slow tests (auto captions download a speech model)
+npm test -- --show            # watch the test window
+```
+Specs live in `tests/specs/*.test.js` (one file per feature area); helpers in `tests/runner.js` and `tests/page-helpers.js`.
+
 ## Website (Cloudflare Workers)
 The same `src/` folder is the website. Every push to `main` deploys it (see `wrangler.jsonc`).
 - Static files in `src/` are served directly by Cloudflare; `worker/index.js` only handles `POST /api/feedback`.

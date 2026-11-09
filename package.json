@@ -8,7 +8,8 @@
     "start": "electron .",
     "docs": "node scripts/build-docs.js",
     "icon": "electron scripts/build-icon.js",
-    "site": "node scripts/build-site.js"
+    "site": "node scripts/build-site.js",
+    "test": "node tests/run.js"
   },
   "license": "MIT",
   "devDependencies": {
