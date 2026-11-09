@@ -9,7 +9,8 @@
     "docs": "node scripts/build-docs.js",
     "icon": "electron scripts/build-icon.js",
     "site": "node scripts/build-site.js",
-    "test": "node tests/run.js"
+    "test": "node tests/run.js",
+    "stamp": "node scripts/stamp-assets.js"
   },
   "license": "MIT",
   "devDependencies": {

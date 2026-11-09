@@ -7,6 +7,9 @@ window.RS = window.RS || {};
   RS.clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   RS.EPS = 1e-4;
   RS.native = window.native || null;
+  // Address of a file loaded from code (worker, worklet) with the build fingerprint, so browsers never
+  // run an old cached copy after an update (see scripts/stamp-assets.js).
+  RS.assetUrl = (p) => { const m = document.querySelector('meta[name="rs-build"]'); return m ? p + '?v=' + m.content : p; };
   RS.isMac = /Mac/.test(navigator.platform);
 
   RS.$ = (s, r = document) => r.querySelector(s);

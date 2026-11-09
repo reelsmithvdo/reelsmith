@@ -44,7 +44,7 @@
       splitter.connect(anL, 0);
       splitter.connect(anR, 1);
       E.gateReady = false;
-      if (actx.audioWorklet) actx.audioWorklet.addModule('js/worklets/gate.js').then(() => { E.gateReady = true; for (const ent of E.pool.values()) ent.afxKey = null; }).catch((err) => console.warn('noise gate unavailable', err));
+      if (actx.audioWorklet) actx.audioWorklet.addModule(RS.assetUrl('js/worklets/gate.js')).then(() => { E.gateReady = true; for (const ent of E.pool.values()) ent.afxKey = null; }).catch((err) => console.warn('noise gate unavailable', err));
     }
     return actx;
   };

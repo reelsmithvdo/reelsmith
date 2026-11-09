@@ -68,7 +68,7 @@
     async transcribe({ samples, model, language, translate }) {
       let device = 'wasm';
       try { if (!AC.forceCpu && navigator.gpu && (await navigator.gpu.requestAdapter())) device = 'webgpu'; } catch { /* no WebGPU */ }
-      if (!worker) worker = new Worker('js/whisper-worker.js', { type: 'module' });
+      if (!worker) worker = new Worker(RS.assetUrl('js/whisper-worker.js'), { type: 'module' });
       const w = worker;
       return new Promise((resolve, reject) => {
         w.onmessage = (e) => {

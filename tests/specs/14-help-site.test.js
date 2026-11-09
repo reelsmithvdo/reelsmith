@@ -19,6 +19,14 @@ module.exports = {
       else { t.ok(ids.includes('install') && !ids.includes('browser-edition'), 'desktop help'); }
       t.ok(!(await t.eval(`RS.HELP_ARTICLES.some((a) => /\\{\\{web:/.test(a.body))`)), 'unresolved {{web:|desktop:}} markers');
     },
+    'scripts carry up-to-date version fingerprints (no stale browser cache)': async (t) => {
+      if (t.mode !== 'web') t.skip('checked once, in web mode');
+      const fs = require('fs'), path = require('path');
+      const cur = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'index.html'), 'utf8');
+      const want = require('../../scripts/stamp-assets').stamped();
+      t.ok(cur === want, 'src/index.html fingerprints are out of date — run `npm run site` (or `npm run stamp`) before pushing');
+      t.ok(/js\/app\.js\?v=[0-9a-f]{10}/.test(cur), 'scripts are not fingerprinted');
+    },
     'website pages load': async (t) => {
       if (t.mode !== 'web') t.skip('checked once, in web mode');
       const pages = ['features/', 'docs/', 'docs/captions/', 'tutorials/', 'tutorials/remove-video-background/', 'blog/', 'about/', 'privacy/', 'terms/', 'sitemap.xml', 'robots.txt'];

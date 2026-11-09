@@ -83,7 +83,7 @@
     const len = Math.max(1, Math.round((b - a) * sr));
     const oc = new OfflineAudioContext(2, len, sr);
     let gateOk = false;
-    try { await oc.audioWorklet.addModule('js/worklets/gate.js'); gateOk = true; } catch { /* gate unavailable */ }
+    try { await oc.audioWorklet.addModule(RS.assetUrl('js/worklets/gate.js')); gateOk = true; } catch { /* gate unavailable */ }
     const step = 0.01;
     const mix = oc.createGain();
     mix.gain.value = Math.pow(10, (S.project.seq.masterDb || 0) / 20);

@@ -252,4 +252,6 @@ for (const d of GENERATED) walk(path.join(SRC, d));
 walk(SRC === '' ? '.' : path.join(SRC)); // also 404.html at the root (index.html links are app-relative)
 const uniq = [...new Set(bad.filter((b) => !b.startsWith('index.html')))];
 if (brokenLinks.length || uniq.length) { console.error('Broken links:\n  ' + [...brokenLinks, ...uniq].join('\n  ')); process.exit(1); }
+// Fingerprint the editor's scripts and styles so visitors always get the newest version.
+{ const st = require('./stamp-assets'); fs.writeFileSync(path.join(SRC, 'index.html'), st.stamped()); }
 console.log(`Website built: ${docs.length} docs, ${tutorials.length} tutorials, ${posts.length} blog posts, ${all.length} URLs in sitemap.xml`);
