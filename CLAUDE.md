@@ -95,6 +95,10 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
 - Online "Publish site" commits content/posts.json + new images to GitHub; the website build
   (`build.command` in wrangler.jsonc) regenerates the pages. The website Worker's hourly cron calls publish
   (header x-rs-scheduler, stripped from visitor requests) so scheduled posts go live on time.
+- Cloudflare gotchas: tokens must be added as **Secret** (plain-text Variables are wiped on every deploy);
+  `/admin*` and `/api/*` are in `run_worker_first` (wrangler.jsonc) — without it browser visits get the 404 page.
+  One GitHub token `reelsmith-admin-publish` (Contents on reelsmith) is on reelsmith-admin; `reelsmith-feedback`
+  (Issues on reelsmith-feedback) is on the website Worker. Test live with `-H 'Sec-Fetch-Mode: navigate'`.
 - On Cloudflare each request opens its own MongoDB connection (Workers can't share sockets across requests).
 - Local Cloudflare test: `cd admin && npm run cf:build && npx wrangler dev` (secrets in `admin/.dev.vars`).
 
