@@ -11,9 +11,9 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
 - **Your files never leave your computer**: editing, captions and export run in the browser. This is a
   core selling point — never add uploads of user media.
 - **No AI features**, except local Whisper speech-to-text for auto captions (runs on the user's device).
-- **Website only, for now (owner's instruction, 2026-11-09).** Work on the website; skip the desktop app
-  (Electron) unless the owner asks — don't spend time testing or changing desktop-only code. Desktop
-  installers and phone apps come later, if at all. The editor is responsive (desktop browsers, iPad,
+- **Website only (owner's instruction, 2026-11-09): no more work on the desktop app.** Don't test,
+  change or plan desktop (Electron) features. The desktop code stays in the repo (and in the `desktop`
+  branch / `desktop-v1.0` tag) only as a backup. Phone apps: not planned. The editor is responsive (desktop browsers, iPad,
   phones) from one code base.
 - **Costs near zero until it earns**: Cloudflare free plan, nothing heavy in the page (~0.5 MB). Whisper
   models download only when someone generates captions, straight from Hugging Face (not our bandwidth).
@@ -30,7 +30,7 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
    - For visitors in the EEA/UK/Switzerland Google requires a **Google-certified CMP** — switch to AdSense's
      own "Privacy & messaging" consent message then (our banner can be removed or kept for other regions).
    - Update the Privacy Policy with the ad providers *before* ads go live (the policy promises this).
-3. Later, maybe: desktop installers (electron-builder, Apple notarization ~$99/yr), phone apps, analytics.
+3. Later, maybe: analytics; more tutorials and languages. (Desktop installers are dropped.)
 
 ## Accounts and services (all on the Reelsmith email)
 | What | Where |
@@ -56,7 +56,7 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
 - `tests/` — the test suite (see below).
 
 ## Workflow (do this every time)
-1. Edit. (Desktop app: not a focus — don't break `main.js`/`preload.js`, but no need to test it.)
+1. Edit. Website only — ignore `main.js` / `preload.js` (desktop app, no longer developed).
 2. If you changed `content/`, `help-content.js` or any script/style: `npm run site`.
 3. `npm test` — website modes (web, phone, tablet), ~5 min. Must be **0 failed**.
    (`--mode=desktop` tests the desktop app, only when asked.)
