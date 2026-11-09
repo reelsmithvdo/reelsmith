@@ -5,6 +5,7 @@
 (function (RS) {
   if (window.native) return;
   const W = RS.web = {};
+  W.VERSION = '1.1'; // shown in bug reports — bump when you publish notable changes
   const S = RS.state;
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   const MOD = isMac ? '⌘' : 'Ctrl+';
