@@ -1,23 +1,6 @@
 {
  "posts": [
   {
-   "section": "blog",
-   "slug": "publishing-test-post",
-   "title": "Publishing test post",
-   "metaTitle": "",
-   "description": "Temporary post to check that publishing from the admin works. It will be deleted in a minute.",
-   "excerpt": "Temporary post to check that publishing from the admin works. It will be deleted in a minute.",
-   "date": "2026-11-09",
-   "updated": "2026-11-09",
-   "image": "",
-   "imageAlt": "",
-   "category": "",
-   "categoryName": "",
-   "keywords": [],
-   "order": 99,
-   "html": "<p>This is a temporary test post. It checks that publishing from the admin reaches the live site.</p>"
-  },
-  {
    "section": "tutorial",
    "slug": "add-subscribe-button-to-video",
    "title": "How to Add an Animated Subscribe Button to Your Video",
