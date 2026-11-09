@@ -68,10 +68,28 @@ async function feedback(request, env) {
   return json({ ok: true });
 }
 
+// /admin is the blog dashboard: a separate Worker (Next.js, admin/) reached only through this service
+// binding, so it has no public address of its own. The scheduler header is internal-only: it is removed from
+// visitors' requests here and added only by the hourly cron below.
+const SCHEDULER = 'x-rs-scheduler';
+function toAdmin(request, env) {
+  if (!env.ADMIN) return new Response('The admin is not set up yet.', { status: 503 });
+  const headers = new Headers(request.headers);
+  headers.delete(SCHEDULER);
+  return env.ADMIN.fetch(new Request(request, { headers }));
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/api/feedback') return feedback(request, env);
+    if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return toAdmin(request, env);
     return env.ASSETS.fetch(request);
+  },
+  // Hourly: publish posts whose scheduled time has come (no commit when nothing changed).
+  async scheduled(event, env, ctx) {
+    if (!env.ADMIN) return;
+    ctx.waitUntil(env.ADMIN.fetch('https://reelsmithapp.com/admin/api/publish', { method: 'POST', headers: { [SCHEDULER]: '1' } })
+      .then(async (r) => console.log('scheduled publish', r.status, (await r.text()).slice(0, 300))));
   },
 };

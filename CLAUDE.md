@@ -71,6 +71,33 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
 4. Commit, then push to `main` (deploys the live site). Ask the owner before pushing if unsure.
 5. Bump `W.VERSION` in `src/js/web.js` for notable releases (shown in bug reports).
 
+## Blog admin (`admin/`, Next.js 16 + MongoDB Atlas) — local only so far
+- Run: `cd admin && npm run dev` → http://localhost:3100/admin (login = ADMIN_EMAIL / ADMIN_PASSWORD in
+  `admin/.env.local`, never committed). Database `reelsmith` on cluster0.8pbzwag (Atlas network access 0.0.0.0/0).
+- Login account: MongoDB `users` (_id 'owner', email + scrypt passwordHash, version `v`); created on first sign-in
+  from ADMIN_EMAIL/ADMIN_PASSWORD_HASH, then changed in Settings (a password change signs out other devices).
+- Collections: `posts` (section blog|tutorial, status draft|published, publishAt → scheduled), `categories`,
+  `media` (GridFS images, resized to WebP in the browser), `settings`.
+- **Publishing is automatic** (`admin/lib/autopublish.js`): publishing/updating/unpublishing/deleting a live post or
+  renaming a used category rebuilds the site in the background; scheduled posts go live via the hourly cron.
+  Settings ▸ "Rebuild site now" is only a manual fallback.
+- The rebuild (Settings fallback button, or automatic) writes `content/posts.json` + images to `src/assets/blog/`, then runs
+  `scripts/build-site.js` → static pages. Going live = commit + push. The Markdown files in content/blog and
+  content/tutorials are only the fallback / original import source (`npm run import-content`).
+- SEO panel: Yoast-style checks in `admin/lib/seo-analysis.js` (from the Algo Matryx admin), score in `lib/score.js`.
+- Google data: Search Console works; GA4 needs the Analytics **Data** API enabled + the service account as Viewer.
+- **Online hosting (free, Cloudflare — the equivalent of Algo Matryx on Vercel):** Worker `reelsmith-admin`
+  (Next.js via OpenNext, `admin/wrangler.jsonc`, ~1.6 MB gzip < 3 MB free limit), deployed by Workers Builds
+  from this repo (root dir `admin`, build `npx opennextjs-cloudflare build`, deploy `npx opennextjs-cloudflare deploy`).
+  No public URL of its own: the website Worker forwards `/admin*` through the `ADMIN` service binding.
+  Secrets on reelsmith-admin: MONGODB_URI, ADMIN_PASSWORD_HASH (salt:scrypt), SESSION_SECRET, GOOGLE_CLIENT_EMAIL,
+  GOOGLE_PRIVATE_KEY, GITHUB_TOKEN (Contents read/write on this repo).
+- Online "Publish site" commits content/posts.json + new images to GitHub; the website build
+  (`build.command` in wrangler.jsonc) regenerates the pages. The website Worker's hourly cron calls publish
+  (header x-rs-scheduler, stripped from visitor requests) so scheduled posts go live on time.
+- On Cloudflare each request opens its own MongoDB connection (Workers can't share sockets across requests).
+- Local Cloudflare test: `cd admin && npm run cf:build && npx wrangler dev` (secrets in `admin/.dev.vars`).
+
 ## Writing content (for Google)
 - New tutorial: copy a file in `content/tutorials/`, change the front matter (`title`, `description`,
   `date`, `order`, optional `image`), write steps that match the real UI labels, run `npm run site`.

@@ -80,8 +80,18 @@ function readMd(dir) {
     return Object.assign({ slug: f.replace(/\.md$/, ''), body: m[2] }, meta);
   }).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (+a.order || 0) - (+b.order || 0));
 }
-const tutorials = readMd('tutorials').sort((a, b) => (+a.order || 99) - (+b.order || 99));
-const posts = readMd('blog');
+// Blog posts and tutorials come from the admin dashboard (MongoDB → content/posts.json, written by
+// "Publish site"). Without that file, the Markdown files in content/blog and content/tutorials are used.
+const POSTS_JSON = path.join(CONTENT, 'posts.json');
+const fromDb = fs.existsSync(POSTS_JSON) ? JSON.parse(fs.readFileSync(POSTS_JSON, 'utf8')).posts : null;
+// One-time import helper for the admin: write the Markdown posts converted to HTML to $RS_DUMP_CONTENT, then stop.
+if (process.env.RS_DUMP_CONTENT) {
+  const conv = (section) => (a) => ({ section, slug: a.slug, title: a.title, description: a.description, date: a.date, order: a.order, image: a.image || '', html: markdown(a.body, section) });
+  fs.writeFileSync(process.env.RS_DUMP_CONTENT, JSON.stringify([...readMd('tutorials').map(conv('tutorial')), ...readMd('blog').map(conv('blog'))]));
+  process.exit(0);
+}
+const tutorials = (fromDb ? fromDb.filter((p) => p.section === 'tutorial') : readMd('tutorials')).sort((a, b) => (+a.order || 99) - (+b.order || 99));
+const posts = (fromDb ? fromDb.filter((p) => p.section === 'blog') : readMd('blog')).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 const pages = Object.fromEntries(readMd('pages').map((p) => [p.slug, p]));
 
 // ---------------------------------------------------------------- layout
@@ -194,18 +204,21 @@ function articlePage(kind, a) {
   const base = kind === 'tutorial' ? '/tutorials/' : '/blog/';
   const p = base + a.slug + '/';
   const bc = [[kind === 'tutorial' ? 'Tutorials' : 'Blog', base], [a.title, p]];
-  const words = plain(a.body).split(' ').length;
-  const meta = [a.date ? `<time datetime="${a.date}">${fmtDate(a.date)}</time>` : '', `${Math.max(1, Math.round(words / 220))} min read`].filter(Boolean).join(' · ');
+  const bodyHtml = a.html != null ? a.html : markdown(a.body, base + a.slug); // admin posts are stored as clean HTML
+  const words = bodyHtml.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+  const meta = [a.date ? `<time datetime="${a.date}">${fmtDate(a.date)}</time>` : '', a.categoryName ? esc(a.categoryName) : '', `${Math.max(1, Math.round(words / 220))} min read`].filter(Boolean).join(' · ');
   const body = `<div class="wrap narrow"><article class="prose">
 ${crumbHtml(bc)}
 <h1>${esc(a.title)}</h1>
 <p class="meta">${meta}</p>
-<p class="lead">${inline(a.description)}</p>
-${markdown(a.body, base + a.slug)}
+<p class="lead">${a.html != null ? esc(a.excerpt || a.description) : inline(a.description)}</p>
+${a.html != null && a.image && !bodyHtml.includes(a.image) ? `<figure class="hero-img"><img src="${esc(a.image)}" alt="${esc(a.imageAlt || a.title)}" fetchpriority="high"></figure>` : ''}
+${bodyHtml}
 ${cta}
 </article></div>`;
   const ld = { '@context': 'https://schema.org', '@type': kind === 'tutorial' ? 'TechArticle' : 'BlogPosting', headline: a.title, description: a.description, url: ORIGIN + p, image: ORIGIN + (a.image || '/assets/og.jpg'), datePublished: a.date, dateModified: a.updated || a.date, author: { '@type': 'Organization', name: 'Reelsmith' }, publisher: { '@type': 'Organization', name: 'Reelsmith', logo: { '@type': 'ImageObject', url: ORIGIN + '/assets/icon-256.png' } } };
-  write(p, layout({ title: a.title, description: a.description, urlPath: p, body, section: base, ogType: 'article', image: a.image, jsonld: [crumbs(bc), ld] }), { priority: 0.8, lastmod: a.updated || a.date || TODAY });
+  if (a.keywords && a.keywords.length) ld.keywords = a.keywords.join(', ');
+  write(p, layout({ title: a.metaTitle || a.title, description: a.description, urlPath: p, body, section: base, ogType: 'article', image: a.image, jsonld: [crumbs(bc), ld] }), { priority: 0.8, lastmod: a.updated || a.date || TODAY });
 }
 tutorials.forEach((a) => articlePage('tutorial', a));
 posts.forEach((a) => articlePage('blog', a));

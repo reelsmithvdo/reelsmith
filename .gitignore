@@ -7,3 +7,4 @@ dist/
 # Google service-account keys must never be committed
 reel-smith-*.json
 *service-account*.json
+.wrangler/

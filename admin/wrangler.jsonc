@@ -1,0 +1,23 @@
+// Cloudflare Worker for the Reelsmith admin (Next.js via OpenNext). Reached at reelsmithapp.com/admin
+// through the website worker (service binding), so it needs no route of its own.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "reelsmith-admin",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "workers_dev": false,
+  "observability": { "enabled": true },
+  "vars": {
+    "MONGODB_DB": "reelsmith",
+    "ADMIN_EMAIL": "reelsmith.vdo@gmail.com",
+    "GSC_SITE": "sc-domain:reelsmithapp.com",
+    "GA_PROPERTY_ID": "563309476",
+    "SITE_URL": "https://reelsmithapp.com",
+    "GITHUB_REPO": "reelsmithvdo/reelsmith",
+    "GITHUB_BRANCH": "main"
+  }
+  // Secrets (set once in the Cloudflare dashboard or with `wrangler secret put`):
+  //   MONGODB_URI, ADMIN_PASSWORD_HASH, SESSION_SECRET, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, GITHUB_TOKEN
+}

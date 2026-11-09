@@ -18,5 +18,9 @@
   // Custom domain (bought through Cloudflare). www → root is a Redirect Rule in the dashboard,
   // so static files stay free (routing them through the Worker would count against its quota).
   "routes": [{ "pattern": "reelsmithapp.com", "custom_domain": true }],
+  // Hourly scheduled publish (free Cron Trigger).
+  "triggers": { "crons": ["17 * * * *"] },
+  // Rebuild the static pages from content/posts.json (written by the admin's Publish site) on every deploy.
+  "build": { "command": "node scripts/build-site.js" },
   "observability": { "enabled": true }
 }
