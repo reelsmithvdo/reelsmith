@@ -257,7 +257,7 @@ write('/404.html', layout({ title: 'Page not found', description: 'This page doe
 // ---------------------------------------------------------------- sitemap + robots
 const all = [{ loc: ORIGIN + '/', lastmod: TODAY, priority: 1.0 }, ...written];
 fs.writeFileSync(path.join(SRC, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${all.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod><priority>${u.priority.toFixed(1)}</priority></url>`).join('\n')}\n</urlset>\n`);
-fs.writeFileSync(path.join(SRC, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${ORIGIN}/sitemap.xml\n`);
+fs.writeFileSync(path.join(SRC, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\n\nSitemap: ${ORIGIN}/sitemap.xml\n`);
 
 // ---------------------------------------------------------------- checks
 const exists = (href) => {
