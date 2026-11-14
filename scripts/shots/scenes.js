@@ -142,6 +142,25 @@ module.exports = {
       SH.finish(4);
     },
   },
+  // Blog 2026-11-15: a long episode with markers on the best moments, a vertical "Short 1" sequence tab,
+  // and the Source monitor with an In/Out range around one moment.
+  repurpose: {
+    size: [1500, 888], wait: 1500,
+    async setup() {
+      SH.ready(); RS.state.project.name = 'Podcast Episode 12'; RS.emit('project-change');
+      const v = await SH.add(await SH.clip({ name: 'episode-12.mp4', kind: 'studio', secs: 90, w: 640, h: 360, fps: 15, audio: true, freq: 180 }), 'video');
+      RS.commit('markers', () => { RS.state.project.markers = [[14, 'Best tip', '#e5484d'], [41, 'Funny moment', '#f0a83a'], [67, 'Big reveal', '#46c27b']].map(([t, name, color], i) => ({ id: 'mk' + i, t, name, color })); });
+      const main = RS.state.project.activeSeq;
+      RS.commit('short', () => { const q = RS.newSequence('Short 1 — Best tip', { width: 1080, height: 1920, fps: 30, autoMatch: false }); RS.state.project.sequences.push(q); });
+      RS.emit('media-change');
+      RS.openSequence(RS.state.project.sequences[1].id); RS.openSequence(main);
+      const m = RS.state.project.media[0];
+      RS.sourceMonitor.load(m.id); SH.tab('source');
+      await new Promise((r) => setTimeout(r, 800));
+      RS.sourceMonitor.seek(12); RS.sourceMonitor.markIn(); RS.sourceMonitor.seek(31); RS.sourceMonitor.markOut(); RS.sourceMonitor.seek(14);
+      SH.finish(14);
+    },
+  },
   privacy: {
     size: [1500, 888],
     async setup() { RS.state.project.name = 'Untitled'; await RS.web.home(); },
