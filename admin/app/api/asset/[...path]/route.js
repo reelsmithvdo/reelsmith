@@ -1,17 +1,16 @@
-// Serves /assets/... inside the admin: blog images from MongoDB, everything else from the website folder.
+// Serves /assets/... inside the admin: blog images from the database (media library), everything else from the website folder.
 import fs from 'fs';
 import path from 'path';
-import { db, bucket } from '@/lib/db';
+import { findMedia, readMedia } from '@/lib/media';
 
 const TYPES = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
 export async function GET(req, { params }) {
   const parts = (await params).path || [];
   const rel = parts.join('/');
   if (parts[0] === 'blog' && parts.length === 2) {
-    const f = await (await db()).collection('media.files').findOne({ filename: parts[1] });
+    const f = await findMedia(parts[1]);
     if (f) {
-      const chunks = []; for await (const c of (await bucket()).openDownloadStream(f._id)) chunks.push(c);
-      return new Response(Buffer.concat(chunks), { headers: { 'content-type': f.metadata?.contentType || TYPES[path.extname(f.filename)] || 'application/octet-stream', 'cache-control': 'private, max-age=3600' } });
+      return new Response(await readMedia(f.filename), { headers: { 'content-type': f.contentType || TYPES[path.extname(f.filename)] || 'application/octet-stream', 'cache-control': 'private, max-age=3600' } });
     }
   }
   if (rel.includes('..')) return new Response('Not found', { status: 404 });

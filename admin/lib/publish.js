@@ -6,8 +6,9 @@
 //    rebuilds and deploys the website from that commit (wrangler.jsonc build command) in about a minute.
 import fs from 'fs';
 import path from 'path';
-import { db, bucket } from './db.js';
-import { effectiveStatus } from './posts.js';
+import { getSettings, setSettings } from './db.js';
+import { effectiveStatus, allPosts, listCategories } from './posts.js';
+import { readMedia } from './media.js';
 import { submitSitemap } from './google.js';
 
 const ROOT = () => path.resolve(process.cwd(), '..');
@@ -15,9 +16,8 @@ const SRC = () => path.resolve(process.cwd(), process.env.SITE_SRC || '../src');
 const localSite = () => { try { return !process.env.GITHUB_TOKEN && fs.existsSync(path.join(ROOT(), 'scripts', 'build-site.js')); } catch { return false; } };
 
 async function collect() {
-  const d = await db();
-  const posts = (await d.collection('posts').find().toArray()).filter((p) => effectiveStatus(p) === 'published');
-  const cats = await d.collection('categories').find().toArray();
+  const posts = (await allPosts()).filter((p) => effectiveStatus(p) === 'published');
+  const cats = await listCategories();
   const catName = (s) => (cats.find((c) => c.slug === s) || {}).name || '';
   const images = new Set();
   for (const p of posts) {
@@ -30,30 +30,24 @@ async function collect() {
     image: (p.featuredImage && p.featuredImage.src) || '', imageAlt: (p.featuredImage && p.featuredImage.alt) || '', category: p.category || '', categoryName: catName(p.category),
     keywords: p.keywords || [], order: p.order ?? 99, html: p.contentHtml || '',
   })).sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
-  return { d, posts: out, images: [...images] };
-}
-async function readImage(d, name) {
-  const file = await d.collection('media.files').findOne({ filename: name });
-  if (!file) return null;
-  const chunks = []; for await (const c of (await bucket()).openDownloadStream(file._id)) chunks.push(c);
-  return Buffer.concat(chunks);
+  return { posts: out, images: [...images] };
 }
 const json = (posts) => JSON.stringify({ posts }, null, 1) + '\n';
 
 async function publishLocal() {
-  const { d, posts, images } = await collect();
+  const { posts, images } = await collect();
   const dir = path.join(SRC(), 'assets', 'blog'); fs.mkdirSync(dir, { recursive: true });
   let copied = 0;
   for (const name of images) {
     const dest = path.join(dir, name);
     if (fs.existsSync(dest)) continue;
-    const buf = await readImage(d, name); if (!buf) continue;
+    const buf = await readMedia(name); if (!buf) continue;
     fs.writeFileSync(dest, buf); copied++;
   }
   fs.writeFileSync(path.join(ROOT(), 'content', 'posts.json'), json(posts));
   const { execFile } = await import('child_process');
   const log = await new Promise((res) => execFile(process.execPath, [path.join(ROOT(), 'scripts', 'build-site.js')], { cwd: ROOT() }, (err, so, se) => res({ ok: !err, text: (so + se).trim() })));
-  return { d, result: { mode: 'local', posts: posts.length, images: copied, ok: log.ok, log: log.text } };
+  return { result: { mode: 'local', posts: posts.length, images: copied, ok: log.ok, log: log.text } };
 }
 
 async function gh(method, url, body) {
@@ -72,7 +66,7 @@ async function publishGitHub(tries = 3) {
 }
 async function publishGitHubOnce() {
   if (!process.env.GITHUB_TOKEN || !process.env.GITHUB_REPO) throw new Error('Publishing online needs the GITHUB_TOKEN secret (GitHub token with Contents: Read and write on ' + (process.env.GITHUB_REPO || 'the repo') + ')');
-  const { d, posts, images } = await collect();
+  const { posts, images } = await collect();
   const branch = process.env.GITHUB_BRANCH || 'main';
   const ref = await gh('GET', `/git/ref/heads/${branch}`);
   const head = await gh('GET', `/git/commits/${ref.object.sha}`);
@@ -84,37 +78,37 @@ async function publishGitHubOnce() {
   let added = 0;
   for (const name of images) {
     if (await gh('GET', `/contents/src/assets/blog/${encodeURIComponent(name)}?ref=${branch}`)) continue;
-    const buf = await readImage(d, name); if (!buf) continue;
+    const buf = await readMedia(name); if (!buf) continue;
     tree.push({ path: `src/assets/blog/${name}`, mode: '100644', type: 'blob', sha: (await gh('POST', '/git/blobs', { content: buf.toString('base64'), encoding: 'base64' })).sha });
     added++;
   }
-  if (!tree.length) return { d, result: { mode: 'github', posts: posts.length, images: 0, ok: true, log: 'Nothing changed since the last publish — the site is up to date.' } };
+  if (!tree.length) return { result: { mode: 'github', posts: posts.length, images: 0, ok: true, log: 'Nothing changed since the last publish — the site is up to date.' } };
   const t = await gh('POST', '/git/trees', { base_tree: head.tree.sha, tree });
   const c = await gh('POST', '/git/commits', { message: `Publish site: ${posts.length} live posts${added ? `, ${added} new image${added > 1 ? 's' : ''}` : ''} (admin)`, tree: t.sha, parents: [ref.object.sha] });
   await gh('PATCH', `/git/refs/heads/${branch}`, { sha: c.sha });
-  return { d, result: { mode: 'github', posts: posts.length, images: added, ok: true, commit: c.sha.slice(0, 7), log: `Saved to GitHub (commit ${c.sha.slice(0, 7)}). Cloudflare is rebuilding reelsmithapp.com — live in about a minute.` } };
+  return { result: { mode: 'github', posts: posts.length, images: added, ok: true, commit: c.sha.slice(0, 7), log: `Saved to GitHub (commit ${c.sha.slice(0, 7)}). Cloudflare is rebuilding reelsmithapp.com — live in about a minute.` } };
 }
 
 // After a publish that changed the live site, Google is told the sitemap changed — but only once Cloudflare
 // has rebuilt the site (a few minutes later), so it fetches the new one. The hourly scheduler (and any later
 // publish) does it; settings.site.sitemapPending holds the time of the change until then.
 const SITEMAP_DELAY = 3 * 60 * 1000;
-export async function maybeSubmitSitemap(d) {
-  const site = await d.collection('settings').findOne({ _id: 'site' });
+export async function maybeSubmitSitemap() {
+  const site = await getSettings();
   const since = site && site.sitemapPending;
   if (!since || Date.now() - new Date(since).getTime() < SITEMAP_DELAY) return null;
   let r;
   try { r = await submitSitemap(); } catch (e) { r = { ok: false, error: e.message }; }
   const $set = { lastSitemapSubmit: { at: new Date(), ok: r.ok, error: r.error || '' } };
-  await d.collection('settings').updateOne({ _id: 'site' }, r.ok ? { $set, $unset: { sitemapPending: '' } } : { $set });
+  await setSettings(r.ok ? { ...$set, sitemapPending: undefined } : $set);
   return r;
 }
 
 export async function publishSite() {
-  const { d, result } = localSite() ? await publishLocal() : await publishGitHub();
+  const { result } = localSite() ? await publishLocal() : await publishGitHub();
   const $set = { lastPublish: { at: new Date(), posts: result.posts, ok: result.ok, mode: result.mode, log: String(result.log || '').slice(-2000) } };
   if (result.commit) $set.sitemapPending = new Date(); // a new commit → the live sitemap is about to change
-  await d.collection('settings').updateOne({ _id: 'site' }, { $set }, { upsert: true });
-  if (result.mode === 'github') { const s = await maybeSubmitSitemap(d); if (s) result.sitemap = s.ok ? 'submitted to Google' : 'Google: ' + s.error; }
+  await setSettings($set);
+  if (result.mode === 'github') { const s = await maybeSubmitSitemap(); if (s) result.sitemap = s.ok ? 'submitted to Google' : 'Google: ' + s.error; }
   return result;
 }

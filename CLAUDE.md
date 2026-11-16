@@ -80,7 +80,7 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
 | Code | github.com/reelsmithvdo/reelsmith (branch `main`); desktop-only snapshot: branch `desktop`, tag `desktop-v1.0` |
 | Bug reports / feature requests | private repo github.com/reelsmithvdo/reelsmith-feedback (issues created by the Worker; secret `GITHUB_TOKEN` in Cloudflare) |
 | Contact form email | Brevo (account on the Reelsmith email), transactional API; secret `BREVO_API_KEY` on the `reelsmith` Worker; vars `CONTACT_TO`/`CONTACT_FROM` in wrangler.jsonc |
-| Database | MongoDB Atlas free (512 MB), cluster0.8pbzwag; DBs `reelsmith` (live) and `reelsmith_dev` (local work) |
+| Database | **Cloudflare D1** `reelsmith` (id 2fc36bb5-…, free: 5 GB), binding `DB` on reelsmith-admin; local copy in `admin/.wrangler/state`. Moved from MongoDB Atlas on 2026-11-16; MongoDB code, driver and env vars removed. Owner deletes the Atlas cluster and the `MONGODB_URI` secret on reelsmith-admin |
 | Hosting | Cloudflare Workers: `reelsmith` (website: static `src/` + `worker/index.js` for `/api/feedback`, `/api/contact`, `/admin*` → `ADMIN` binding, hourly cron) and `reelsmith-admin` (blog admin). Every push to `main` deploys both (~1–2 min) |
 | Domain | reelsmithapp.com (Cloudflare Registrar). `www` → root redirect still to be set up (Rules ▸ Redirect from WWW to root) |
 | YouTube | https://www.youtube.com/@ReelSmithVdo (name "Reelsmith", banner/description/links set 2026-11-09) |
@@ -107,13 +107,13 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
 - `scripts/shoot.js` — real editor screenshots for the site: `npx electron scripts/shoot.js <scene>` (scenes in
   `scripts/shots/scenes.js`; `preview` scenes go to a temp folder).
 - `content/` — website text: `pages/`, `tools/`, `tutorials/`, `blog/` (Markdown with front matter). Blog and
-  tutorials actually come from `content/posts.json` (written by the admin from MongoDB); the Markdown files
+  tutorials actually come from `content/posts.json` (written by the admin from the D1 database); the Markdown files
   in `content/blog` and `content/tutorials` are only the original import/fallback.
 - `scripts/build-site.js` — builds `/features/`, `/tools/…`, `/docs/…`, `/tutorials/…`, `/blog/…`, `/contact/`,
   legal pages, `sitemap.xml`, `robots.txt` into `src/`, and fingerprints scripts (`?v=hash`).
 - `src/contact.js` — contact form script; `worker/index.js` `contact()` sends it with Brevo.
 - Images: editor screenshots in `src/assets/shots/` (made with `scripts/shoot.js`); images uploaded in the admin
-  are stored in MongoDB GridFS (compressed to WebP ≤ ~400 KB in the browser, 2 MB server cap) and written to
+  are stored in D1 (`media` + `media_chunks`, compressed to WebP ≤ ~400 KB in the browser, 2 MB server cap) and written to
   `src/assets/blog/` on publish.
 - `tests/` — the test suite (see below).
 
@@ -127,14 +127,16 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
 4. Commit, then push to `main` (deploys the live site). Ask the owner before pushing if unsure.
 5. Bump `W.VERSION` in `src/js/web.js` for notable releases (shown in bug reports).
 
-## Blog admin (`admin/`, Next.js 16 + MongoDB Atlas) — live at https://reelsmithapp.com/admin
+## Blog admin (`admin/`, Next.js 16 + Cloudflare D1) — live at https://reelsmithapp.com/admin
 - Local: `cd admin && npm run dev` → http://localhost:3100/admin (env in `admin/.env.local`, never committed;
-  uses the **`reelsmith_dev`** database). Live uses `reelsmith`. Atlas network access 0.0.0.0/0.
+  uses a **local copy of D1** in `admin/.wrangler/state` via OpenNext's dev hook in next.config.mjs). Live uses the D1
+  database `reelsmith`. Schema: `admin/migrations/*.sql` (`npx wrangler d1 migrations apply reelsmith --local|--remote`).
 - Claude must not type the owner's password: the owner signs in; Claude can then use the signed-in browser.
-- Login account: MongoDB `users` (_id 'owner', email + scrypt passwordHash, version `v`); created on first sign-in
+- Login account: D1 `users` (id 'owner', JSON doc with email + scrypt passwordHash, version `v`); created on first sign-in
   from ADMIN_EMAIL/ADMIN_PASSWORD_HASH, then changed in Settings (a password change signs out other devices).
 - Collections: `posts` (section blog|tutorial, status draft|published, publishAt → scheduled), `categories`,
-  `media` (GridFS images, resized to WebP in the browser), `settings`.
+  `media` + `media_chunks` (images split into ≤900 KB pieces; D1 rows max 2 MB), `settings`. Code: `lib/db.js`
+  (all/first/run/batch, getDoc/setDoc), `lib/posts.js`, `lib/media.js`. Posts: columns + JSON `doc` for other fields.
 - **Publishing is automatic** (`admin/lib/autopublish.js`): publishing/updating/unpublishing/deleting a live post or
   renaming a used category rebuilds the site in the background; scheduled posts go live via the hourly cron.
   Settings ▸ "Rebuild site now" is only a manual fallback.
@@ -149,7 +151,7 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   (Next.js via OpenNext, `admin/wrangler.jsonc`, ~1.6 MB gzip < 3 MB free limit), deployed by Workers Builds
   from this repo (root dir `admin`, build `npx opennextjs-cloudflare build`, deploy `npx opennextjs-cloudflare deploy`).
   No public URL of its own: the website Worker forwards `/admin*` through the `ADMIN` service binding.
-  Secrets on reelsmith-admin: MONGODB_URI, ADMIN_PASSWORD_HASH (salt:scrypt), SESSION_SECRET, GOOGLE_CLIENT_EMAIL,
+  Secrets on reelsmith-admin: ADMIN_PASSWORD_HASH (salt:scrypt), SESSION_SECRET, GOOGLE_CLIENT_EMAIL,
   GOOGLE_PRIVATE_KEY, GITHUB_TOKEN (Contents read/write on this repo). Secrets on reelsmith (website):
   GITHUB_TOKEN (Issues on reelsmith-feedback), BREVO_API_KEY. Claude never pastes tokens/keys — the owner does.
 - Online "Publish site" commits content/posts.json + new images to GitHub; the website build
@@ -159,17 +161,15 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   `/admin*` and `/api/*` are in `run_worker_first` (wrangler.jsonc) — without it browser visits get the 404 page.
   One GitHub token `reelsmith-admin-publish` (Contents on reelsmith) is on reelsmith-admin; `reelsmith-feedback`
   (Issues on reelsmith-feedback) is on the website Worker. Test live with `-H 'Sec-Fetch-Mode: navigate'`.
-- **Local work uses a separate database:** `admin/.env.local` has `MONGODB_DB=reelsmith_dev` (live = `reelsmith`).
-  The live hourly publish reads `reelsmith`, so local edits never go live by themselves. Before pushing locally
-  prepared content, copy it to live first — otherwise the live hourly publish rebuilds posts.json from the old
-  live posts and undoes the work. `scripts/promote-dev.mjs --yes` (delete + copy) is blocked by Claude's safety
-  check; on 2026-11-10 we instead backed up the live posts and updated them in place by `_id` (replaceOne,
-  no deletes). Content scripts used: `admin/scripts/content/improve-2026-11*.mjs` (one-off, already applied).
-- On Cloudflare each request opens its own MongoDB connection (Workers can't share sockets across requests).
+- **Local work uses a separate database:** the local D1 copy (`npm run dev`, scripts without `--live`). The live hourly
+  publish reads the live D1, so local edits never go live by themselves. Scripts reach either database with
+  `admin/scripts/d1.mjs` (`useD1()`; `--live` = live D1 through `npx wrangler login`), then use the normal lib code —
+  template: `admin/scripts/content/post-2026-11-15-long-video-into-shorts.mjs` (uploads an image + saves a post).
+  MongoDB was fully copied to D1 on 2026-11-16 (script removed afterwards; it is in git history: migrate-mongo-to-d1.mjs).
 - Local Cloudflare test: `cd admin && npm run cf:build && npx wrangler dev` (secrets in `admin/.dev.vars`).
 
 ## Writing content (for Google)
-- Blog posts and tutorials: write them in the admin (or in `reelsmith_dev` with a script through
+- Blog posts and tutorials: write them in the admin (or with a script through `admin/scripts/d1.mjs` +
   `admin/lib/posts.js` `savePost`, which cleans the HTML and scores it). Aim for SEO score ≥ 85: keyphrase in
   title/first paragraph/some H2s/an image alt, meta description 120–156 chars, 2+ internal links, 1 outbound
   source, a featured image with descriptive alt, FAQ section. Tips are `<blockquote>` (the editor supports it).

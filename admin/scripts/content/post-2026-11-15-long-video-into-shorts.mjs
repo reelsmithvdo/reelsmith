@@ -1,24 +1,19 @@
 // Blog post scheduled for 2026-11-15 10:00 (Asia/Dhaka): "How to Turn a Long Video into Shorts".
-// Uploads its screenshot to the Media library (GridFS, like the admin) and saves the post through savePost.
-// node --env-file=.env.local scripts/content/post-2026-11-15-long-video-into-shorts.mjs  (MONGODB_DB decides where)
+// Uploads its screenshot to the Media library and saves the post through savePost (template for new posts).
+// node --env-file=.env.local scripts/content/post-2026-11-15-long-video-into-shorts.mjs [--live]   (local copy, or the live database)
 import fs from 'fs';
-import { Readable } from 'stream';
-import { db, bucket } from '../../lib/db.js';
-import { savePost } from '../../lib/posts.js';
-import { seoReport } from '../../lib/score.js';
+import { useD1 } from '../d1.mjs';
+const proxy = await useD1();
+const { all, run } = await import('../../lib/db.js');
+const { savePost, findPost, getPost } = await import('../../lib/posts.js');
+const { findMedia, saveMedia } = await import('../../lib/media.js');
+const { seoReport } = await import('../../lib/score.js');
 
 const IMG = { file: new URL('../../../src/assets/shots/repurpose.jpg', import.meta.url), name: 'turn-long-video-into-shorts.jpg', w: 1500, h: 888,
   alt: 'Turn a long video into Shorts: markers on the best moments, a vertical Short sequence tab and an In/Out range in the Source monitor' };
 
-const d = await db();
 // Media library: reuse the image if it was uploaded before (same filename), otherwise upload it.
-let media = await d.collection('media.files').findOne({ filename: IMG.name });
-if (!media) {
-  const b = await bucket();
-  const up = b.openUploadStream(IMG.name, { metadata: { alt: IMG.alt, width: IMG.w, height: IMG.h, contentType: 'image/jpeg' } });
-  await new Promise((res, rej) => Readable.from(fs.readFileSync(IMG.file)).pipe(up).on('finish', res).on('error', rej));
-  media = await d.collection('media.files').findOne({ filename: IMG.name });
-}
+const media = (await findMedia(IMG.name)) || await saveMedia({ filename: IMG.name, contentType: 'image/jpeg', data: fs.readFileSync(IMG.file), alt: IMG.alt, width: IMG.w, height: IMG.h });
 const src = '/assets/blog/' + IMG.name;
 const fig = (s, alt, cap) => `<figure><img src="${s}" alt="${alt}"><figcaption>${cap}</figcaption></figure>`;
 const tip = (html) => `<blockquote><p><strong>Tip:</strong> ${html}</p></blockquote>`;
@@ -77,12 +72,12 @@ const post = {
   contentHtml: html, order: 99,
 };
 
-const prev = await d.collection('posts').findOne({ section: 'blog', slug: post.slug });
-const { id } = await savePost(prev ? String(prev._id) : null, post, { email: 'content-script' });
-const now = await d.collection('posts').findOne({ _id: id });
-const others = (await d.collection('posts').find({ _id: { $ne: id }, focusKeyword: { $ne: '' } }).toArray()).map((x) => ({ title: x.title, focusKeyphrase: x.focusKeyword }));
+const prev = await findPost('blog', post.slug);
+const { id } = await savePost(prev ? prev._id : null, post, { email: 'content-script' });
+const now = await getPost(id);
+const others = (await all(`SELECT title, json_extract(doc, '$.focusKeyword') AS k FROM posts WHERE id <> ? AND ifnull(json_extract(doc, '$.focusKeyword'), '') <> ''`, id)).map((x) => ({ title: x.title, focusKeyphrase: x.k }));
 const r = seoReport(now, others);
-await d.collection('posts').updateOne({ _id: id }, { $set: { seoScore: r.score } });
-console.log(`${process.env.MONGODB_DB}: ${prev ? 'updated' : 'created'} ${post.slug} — publishes ${post.publishAt.toISOString()} — score ${r.score}, ${r.words} words; media ${media._id}`);
+await run(`UPDATE posts SET doc = json_set(doc, '$.seoScore', ?) WHERE id = ?`, r.score, id);
+console.log(`${prev ? 'updated' : 'created'} ${post.slug} — publishes ${post.publishAt.toISOString()} — score ${r.score}, ${r.words} words; media ${media.id}`);
 console.log('not good:', [...r.seo, ...r.read].filter((x) => x.status !== 'good').map((x) => x.label + ': ' + x.text).join('\n  ') || '—');
-process.exit(0);
+await proxy.dispose(); process.exit(0);

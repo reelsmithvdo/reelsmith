@@ -1,41 +1,46 @@
-// MongoDB connection, shared across requests (and kept across hot reloads in development).
-import { MongoClient, ObjectId, GridFSBucket } from 'mongodb';
+// The admin's database: Cloudflare D1 (SQLite), binding "DB" in wrangler.jsonc. Schema: migrations/*.sql.
+//  • Online: the Worker's D1 binding.
+//  • This Mac (`npm run dev`): OpenNext's dev hook (next.config.mjs) gives the same binding backed by a local
+//    copy in .wrangler/state, so local work never touches the live database.
+//  • Node scripts (scripts/*.mjs): call useD1() from scripts/d1.mjs first, which sets globalThis.__rsD1.
+import crypto from 'crypto';
 
-const g = globalThis;
-// Cloudflare Workers forbid reusing a connection opened by another request, so there each request gets its
-// own client (kept for that request only). On a normal Node server one shared client is reused.
-const IN_WORKER = typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers';
-const perRequest = new WeakMap();
-async function requestKey() {
-  try { const { getCloudflareContext } = await import('@opennextjs/cloudflare'); return getCloudflareContext().ctx || null; } catch { return null; }
+export async function d1() {
+  if (globalThis.__rsD1) return globalThis.__rsD1;
+  const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+  const { env } = await getCloudflareContext({ async: true });
+  if (!env.DB) throw new Error('D1 database binding "DB" is missing (wrangler.jsonc)');
+  return env.DB;
 }
-export async function db() {
-  if (IN_WORKER) {
-    const key = await requestKey();
-    if (key && perRequest.has(key)) return perRequest.get(key);
-    const p = open({ maxPoolSize: 1 }, false);
-    if (key) perRequest.set(key, p);
-    return p;
-  }
-  if (!g.__rsDb) g.__rsDb = open({}, true).catch((e) => { g.__rsDb = null; throw e; });
-  return g.__rsDb;
+const stmt = async (sql, params) => (await d1()).prepare(sql).bind(...params);
+export const all = async (sql, ...params) => (await (await stmt(sql, params)).all()).results;
+export const first = async (sql, ...params) => (await stmt(sql, params)).first();
+export const run = async (sql, ...params) => (await stmt(sql, params)).run();
+// Several statements in one transaction: batch([[sql, ...params], …]).
+export async function batch(list) {
+  const db = await d1();
+  return db.batch(list.map(([sql, ...params]) => db.prepare(sql).bind(...params)));
 }
-// indexes: create them once per server start (not on every Cloudflare request).
-async function open(extra, indexes) {
-  if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI is not set');
-  const c = await new MongoClient(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 15000, ...extra }).connect();
-  const d = c.db(process.env.MONGODB_DB || 'reelsmith');
-  if (indexes) {
-    await Promise.all([
-        d.collection('posts').createIndex({ section: 1, slug: 1 }, { unique: true }),
-        d.collection('posts').createIndex({ updatedAt: -1 }),
-        d.collection('categories').createIndex({ slug: 1 }, { unique: true }),
-        d.collection('media.files').createIndex({ filename: 1 }),
-    ]).catch(() => {});
-  }
-  return d;
-}
-export async function bucket() { return new GridFSBucket(await db(), { bucketName: 'media' }); }
-export const oid = (id) => { try { return new ObjectId(String(id)); } catch { return null; } };
+
+// New ids look like the old MongoDB ids (24 hex characters), so links to existing posts keep working.
+export const newId = () => crypto.randomBytes(12).toString('hex');
 // Plain JSON for client components.
 export const plain = (doc) => JSON.parse(JSON.stringify(doc));
+const parse = (s) => { try { return JSON.parse(s || '{}'); } catch { return {}; } };
+
+// settings / users: one small JSON document per id.
+export async function getDoc(table, id) {
+  const r = await first(`SELECT doc FROM ${table} WHERE id = ?`, id);
+  return r ? { _id: id, ...parse(r.doc) } : null;
+}
+// Merge fields into the document (creating it if needed); a field set to undefined is removed.
+export async function setDoc(table, id, fields) {
+  const cur = (await getDoc(table, id)) || {};
+  delete cur._id;
+  const next = { ...cur, ...fields };
+  for (const k of Object.keys(next)) if (next[k] === undefined) delete next[k];
+  await run(`INSERT INTO ${table} (id, doc) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET doc = excluded.doc`, id, JSON.stringify(next));
+  return { _id: id, ...next };
+}
+export const getSettings = (id = 'site') => getDoc('settings', id);
+export const setSettings = (fields, id = 'site') => setDoc('settings', id, fields);

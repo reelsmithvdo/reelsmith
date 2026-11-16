@@ -1,11 +1,11 @@
-// Single-owner login. The account lives in MongoDB (`users`, one document) so email and password can be
+// Single-owner login. The account lives in the database (`users`, one JSON document 'owner') so email and password can be
 // changed in Settings. On the very first sign-in it is created from ADMIN_EMAIL + ADMIN_PASSWORD_HASH.
 // Sessions are signed cookies (HMAC-SHA256) carrying the account's version: changing the password bumps
 // the version, which signs out every other device.
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { db } from './db';
+import { getDoc, setDoc } from './db';
 
 const COOKIE = 'rs_admin';
 const DAYS = 14;
@@ -25,12 +25,9 @@ function verifyHash(password, stored) {
 const norm = (e) => String(e || '').trim().toLowerCase();
 
 async function account() {
-  const users = (await db()).collection('users');
-  let u = await users.findOne({ _id: 'owner' });
+  let u = await getDoc('users', 'owner');
   if (!u && process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD_HASH) {
-    u = { _id: 'owner', email: norm(process.env.ADMIN_EMAIL), passwordHash: process.env.ADMIN_PASSWORD_HASH, v: 1, createdAt: new Date() };
-    await users.insertOne(u).catch(() => {});
-    u = await users.findOne({ _id: 'owner' });
+    u = await setDoc('users', 'owner', { email: norm(process.env.ADMIN_EMAIL), passwordHash: process.env.ADMIN_PASSWORD_HASH, v: 1, createdAt: new Date() });
   }
   return u;
 }
@@ -73,7 +70,7 @@ export async function changeEmail(newEmail, currentPassword) {
   if (!u || !verifyHash(currentPassword, u.passwordHash)) throw new Error('Current password is wrong');
   const email = norm(newEmail);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email address');
-  await (await db()).collection('users').updateOne({ _id: 'owner' }, { $set: { email, updatedAt: new Date() } });
+  await setDoc('users', 'owner', { email, updatedAt: new Date() });
   return { ...u, email };
 }
 export async function changePassword(currentPassword, next, confirm) {
@@ -83,6 +80,6 @@ export async function changePassword(currentPassword, next, confirm) {
   if (next !== confirm) throw new Error('The new passwords do not match');
   if (verifyHash(next, u.passwordHash)) throw new Error('The new password is the same as the current one');
   const v = (u.v || 1) + 1;
-  await (await db()).collection('users').updateOne({ _id: 'owner' }, { $set: { passwordHash: hashPassword(next), v, updatedAt: new Date() } });
+  await setDoc('users', 'owner', { passwordHash: hashPassword(next), v, updatedAt: new Date() });
   return { ...u, v };
 }

@@ -1,7 +1,7 @@
-// Posts and categories in MongoDB.
+// Posts and categories (Cloudflare D1: tables posts, categories — see migrations/0001_init.sql).
 // status: 'draft' | 'published'. A published post with a future publishAt is "scheduled".
 import sanitizeHtml from 'sanitize-html';
-import { db, oid } from './db.js';
+import { all, first, run, batch, newId } from './db.js';
 import { slugify } from './seo.js';
 import { seoReport } from './score.js';
 
@@ -52,73 +52,96 @@ export function normalise(input, prev = {}) {
   return doc;
 }
 
-export async function listPosts({ q, status, section } = {}) {
-  const d = await db();
-  const find = {};
-  if (section) find.section = section;
-  if (q) find.title = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
-  const all = await d.collection('posts').find(find, { projection: { contentHtml: 0 } }).sort({ updatedAt: -1 }).toArray();
-  return status ? all.filter((p) => effectiveStatus(p) === status) : all;
+// A posts row as the document the rest of the admin uses (same fields as before, _id = id).
+const COLS = 'id, section, slug, title, status, publish_at, category, doc, created_at, updated_at';
+export function fromRow(r) {
+  if (!r) return null;
+  let doc = {}; try { doc = JSON.parse(r.doc || '{}'); } catch { /* keep empty */ }
+  const p = { ...doc, _id: r.id, section: r.section, slug: r.slug, title: r.title, status: r.status, category: r.category, publishAt: new Date(r.publish_at), createdAt: new Date(r.created_at), updatedAt: new Date(r.updated_at) };
+  if (r.content_html !== undefined) p.contentHtml = r.content_html;
+  return p;
 }
+// Fields kept in the JSON column (everything that isn't a column of its own).
+const COLUMNS = new Set(['_id', 'id', 'section', 'slug', 'title', 'status', 'category', 'publishAt', 'createdAt', 'updatedAt', 'contentHtml']);
+const docJson = (p) => JSON.stringify(Object.fromEntries(Object.entries(p).filter(([k]) => !COLUMNS.has(k))));
+const ms = (d) => +new Date(d);
+
+// Writes a whole post (insert or replace). Also used by the migration and content scripts.
+export async function writePost(p) {
+  await run(`INSERT INTO posts (id, section, slug, title, status, publish_at, category, content_html, doc, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (id) DO UPDATE SET section = excluded.section, slug = excluded.slug, title = excluded.title, status = excluded.status,
+      publish_at = excluded.publish_at, category = excluded.category, content_html = excluded.content_html, doc = excluded.doc, updated_at = excluded.updated_at`,
+  String(p._id), p.section, p.slug, p.title, p.status, ms(p.publishAt), p.category || '', p.contentHtml || '', docJson(p), ms(p.createdAt || Date.now()), ms(p.updatedAt || Date.now()));
+}
+
+export async function listPosts({ q, status, section } = {}) {
+  const where = [], params = [];
+  if (section) { where.push('section = ?'); params.push(section); }
+  if (q) { where.push("title LIKE ? ESCAPE '\\'"); params.push('%' + q.replace(/[\\%_]/g, '\\$&') + '%'); }
+  const rows = await all(`SELECT ${COLS} FROM posts ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY updated_at DESC`, ...params);
+  const list = rows.map(fromRow);
+  return status ? list.filter((p) => effectiveStatus(p) === status) : list;
+}
+// Every post with its text (for publishing).
+export const allPosts = async () => (await all(`SELECT ${COLS}, content_html FROM posts`)).map(fromRow);
 export async function counts() {
-  const all = await listPosts();
-  const c = { total: all.length, published: 0, scheduled: 0, draft: 0 };
-  for (const p of all) c[effectiveStatus(p)]++;
+  const list = await listPosts();
+  const c = { total: list.length, published: 0, scheduled: 0, draft: 0 };
+  for (const p of list) c[effectiveStatus(p)]++;
   return c;
 }
-export async function getPost(id) { return (await db()).collection('posts').findOne({ _id: oid(id) }); }
+export const getPost = async (id) => fromRow(await first(`SELECT ${COLS}, content_html FROM posts WHERE id = ?`, String(id)));
+export const findPost = async (section, slug) => fromRow(await first(`SELECT ${COLS}, content_html FROM posts WHERE section = ? AND slug = ?`, section, slug));
 
 export async function savePost(id, input, user) {
-  const d = await db();
   const prev = id ? await getPost(id) : null;
   if (id && !prev) throw new Error('Post not found');
   const doc = normalise(input, prev || {});
-  const clash = await d.collection('posts').findOne({ section: doc.section, slug: doc.slug, ...(prev ? { _id: { $ne: prev._id } } : {}) });
+  const clash = await first('SELECT id FROM posts WHERE section = ? AND slug = ? AND id <> ?', doc.section, doc.slug, prev ? prev._id : '');
   if (clash) throw new Error(`Another ${doc.section === 'blog' ? 'blog post' : 'tutorial'} already uses the URL /${doc.slug}/`);
   const now = new Date();
   // The website needs rebuilding when the post is live now, or was live before this change.
   const affectsSite = effectiveStatus(doc) === 'published' || (!!prev && effectiveStatus(prev) === 'published');
   const status = effectiveStatus(doc);
-  if (prev) { await d.collection('posts').updateOne({ _id: prev._id }, { $set: { ...doc, updatedAt: now, updatedBy: user.email } }); return { id: prev._id, affectsSite, status }; }
-  const r = await d.collection('posts').insertOne({ ...doc, createdAt: now, updatedAt: now, author: 'Reelsmith', createdBy: user.email });
-  return { id: r.insertedId, affectsSite, status };
+  if (prev) { await writePost({ ...prev, ...doc, updatedAt: now, updatedBy: user.email }); return { id: prev._id, affectsSite, status }; }
+  const _id = newId();
+  await writePost({ ...doc, _id, createdAt: now, updatedAt: now, author: 'Reelsmith', createdBy: user.email });
+  return { id: _id, affectsSite, status };
 }
 export async function deletePost(id) {
-  const d = await db();
-  const prev = await d.collection('posts').findOne({ _id: oid(id) });
-  await d.collection('posts').deleteOne({ _id: oid(id) });
+  const prev = await getPost(id);
+  await run('DELETE FROM posts WHERE id = ?', String(id));
   return { affectsSite: !!prev && effectiveStatus(prev) === 'published' };
 }
 
+const catRow = (c) => ({ _id: c.id, slug: c.slug, name: c.name, description: c.description, createdAt: new Date(c.created_at) });
 export async function listCategories() {
-  const d = await db();
-  const cats = await d.collection('categories').find().sort({ name: 1 }).toArray();
-  const used = await d.collection('posts').aggregate([{ $group: { _id: '$category', n: { $sum: 1 } } }]).toArray();
-  return cats.map((c) => ({ ...c, posts: (used.find((u) => u._id === c.slug) || {}).n || 0 }));
+  const cats = await all('SELECT * FROM categories ORDER BY name');
+  const used = await all('SELECT category, COUNT(*) AS n FROM posts GROUP BY category');
+  return cats.map((c) => ({ ...catRow(c), posts: (used.find((u) => u.category === c.slug) || {}).n || 0 }));
 }
 export async function saveCategory(id, input) {
-  const d = await db();
   const name = String(input.name || '').trim().slice(0, 80);
   if (!name) throw new Error('Name is required');
   const slug = slugify(input.slug || name);
-  const doc = { name, slug, description: String(input.description || '').trim().slice(0, 300) };
-  const clash = await d.collection('categories').findOne({ slug, ...(id ? { _id: { $ne: oid(id) } } : {}) });
+  const description = String(input.description || '').trim().slice(0, 300);
+  const clash = await first('SELECT id FROM categories WHERE slug = ? AND id <> ?', slug, id || '');
   if (clash) throw new Error('A category with that slug already exists');
   if (id) {
-    const old = await d.collection('categories').findOne({ _id: oid(id) });
-    await d.collection('categories').updateOne({ _id: oid(id) }, { $set: doc });
-    if (old && old.slug !== slug) await d.collection('posts').updateMany({ category: old.slug }, { $set: { category: slug } });
+    const old = await first('SELECT * FROM categories WHERE id = ?', id);
+    const list = [['UPDATE categories SET name = ?, slug = ?, description = ? WHERE id = ?', name, slug, description, id]];
+    if (old && old.slug !== slug) list.push(['UPDATE posts SET category = ? WHERE category = ?', slug, old.slug]);
+    await batch(list);
     return { affectsSite: !!old && (old.name !== name || old.slug !== slug) };
   }
-  await d.collection('categories').insertOne({ ...doc, createdAt: new Date() });
+  await run('INSERT INTO categories (id, slug, name, description, created_at) VALUES (?, ?, ?, ?, ?)', newId(), slug, name, description, Date.now());
   return { affectsSite: false };
 }
 export async function deleteCategory(id) {
-  const d = await db();
-  const c = await d.collection('categories').findOne({ _id: oid(id) });
+  const c = await first('SELECT * FROM categories WHERE id = ?', id);
   if (!c) return;
-  const used = await d.collection('posts').countDocuments({ category: c.slug });
-  await d.collection('posts').updateMany({ category: c.slug }, { $set: { category: '' } });
-  await d.collection('categories').deleteOne({ _id: c._id });
+  const used = (await first('SELECT COUNT(*) AS n FROM posts WHERE category = ?', c.slug)).n;
+  await batch([['UPDATE posts SET category = \'\' WHERE category = ?', c.slug], ['DELETE FROM categories WHERE id = ?', id]]);
   return { affectsSite: used > 0 };
 }

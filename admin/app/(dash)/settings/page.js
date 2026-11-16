@@ -2,15 +2,14 @@ import Icon from '@/components/Icon';
 import PublishButton from '@/components/PublishButton';
 import AccountForms from '@/components/AccountForms';
 import { requireUser } from '@/lib/auth';
-import { db } from '@/lib/db';
+import { first, getSettings } from '@/lib/db';
 import { searchConsole, analytics, serviceAccountEmail } from '@/lib/google';
 
 export const metadata = { title: 'Settings' };
 const ok = (p) => p.then(() => ({ ok: true }), (e) => ({ ok: false, e: e.message }));
 export default async function Settings() {
   const user = await requireUser();
-  const d = await db();
-  const [mongo, gsc, ga, site] = await Promise.all([ok(d.command({ ping: 1 })), ok(searchConsole()), ok(analytics()), d.collection('settings').findOne({ _id: 'site' })]);
+  const [database, gsc, ga, site] = await Promise.all([ok(first('SELECT 1 AS ok')), ok(searchConsole()), ok(analytics()), getSettings()]);
   const row = (label, s, extra) => <tr><td>{label}</td><td style={{ textAlign: 'left' }}>{s.ok ? <span className="badge b-published">Connected</span> : <span className="badge b-draft">Not connected</span>} {!s.ok && <span className="small muted">{String(s.e).split('.')[0]}</span>}{extra}</td></tr>;
   const lp = site && site.lastPublish;
   return <>
@@ -27,7 +26,7 @@ export default async function Settings() {
       <div className="card">
         <div className="card-h"><Icon name="globe" />Connections</div>
         <table className="t"><tbody>
-          {row('MongoDB', mongo)}
+          {row('Database (Cloudflare D1)', database)}
           {row('Search Console', gsc)}
           {row('Google Analytics', ga)}
           <tr><td>Google account</td><td style={{ textAlign: 'left' }} className="small">{serviceAccountEmail() || '—'}</td></tr>

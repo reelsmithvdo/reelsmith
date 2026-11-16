@@ -9,8 +9,12 @@
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "workers_dev": false,
   "observability": { "enabled": true },
+  // The blog database (Cloudflare D1). Schema: migrations/*.sql (npx wrangler d1 migrations apply reelsmith --remote).
+  // Locally (next dev, scripts) the same binding is a local copy in .wrangler/state.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "reelsmith", "database_id": "2fc36bb5-60a3-4998-a493-959bb189e63a", "migrations_dir": "migrations" }
+  ],
   "vars": {
-    "MONGODB_DB": "reelsmith",
     "ADMIN_EMAIL": "reelsmith.vdo@gmail.com",
     "GSC_SITE": "sc-domain:reelsmithapp.com",
     "GA_PROPERTY_ID": "563309476",
@@ -19,5 +23,5 @@
     "GITHUB_BRANCH": "main"
   }
   // Secrets (set once in the Cloudflare dashboard or with `wrangler secret put`):
-  //   MONGODB_URI, ADMIN_PASSWORD_HASH, SESSION_SECRET, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, GITHUB_TOKEN
+  //   ADMIN_PASSWORD_HASH, SESSION_SECRET, GOOGLE_CLIENT_EMAIL, GOOGLE_PRIVATE_KEY, GITHUB_TOKEN
 }

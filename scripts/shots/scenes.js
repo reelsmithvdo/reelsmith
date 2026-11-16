@@ -161,6 +161,55 @@ module.exports = {
       SH.finish(14);
     },
   },
+  // Blog 2026-11-16: the Export dialog set up to compress (Custom, 1280×720, Medium) with the size estimate.
+  compress: {
+    size: [1500, 888], wait: 1200,
+    async setup() {
+      SH.ready(); RS.state.project.name = 'Product Demo'; RS.emit('project-change');
+      const f = await SH.clip({ name: 'product-demo.mp4', kind: 'city', secs: 30, w: 1280, h: 720, fps: 10 });
+      for (let i = 0; i < 4; i++) await SH.add(f, 'video', 0, i * 30);
+      RS.commit('shot', () => Object.assign(RS.state.project.settings, { width: 1920, height: 1080, fps: 30 }));
+      SH.finish(20);
+      RS.exporter.dialog();
+      await new Promise((r) => setTimeout(r, 400));
+      const sels = [...document.querySelectorAll('.modal select')];
+      const pick = (has, v) => { const s = sels.find((x) => x.querySelector(`option[value="${has}"]`)); if (s) { s.value = v; s.dispatchEvent(new Event('change')); } };
+      pick('review', 'custom'); pick('1280x720', '1280x720'); pick('low', 'medium');
+    },
+  },
+  // Blog 2026-11-18: File ▸ Export as GIF… with an In/Out range on a short reaction clip.
+  gif: {
+    size: [1500, 888], wait: 1200,
+    async setup() {
+      SH.ready(); RS.state.project.name = 'Reaction'; RS.emit('project-change');
+      await SH.add(await SH.clip({ name: 'reaction.mp4', kind: 'portrait', secs: 12, w: 1280, h: 720 }), 'video');
+      RS.commit('io', () => { RS.state.project.inOut = { in: 2, out: 6 }; });
+      SH.finish(3);
+      RS.quick.gifDialog();
+      await new Promise((r) => setTimeout(r, 300));
+      const s = [...document.querySelectorAll('.modal select')].find((x) => [...x.options].some((o) => /In\/Out/i.test(o.text)));
+      if (s) { const o = [...s.options].find((x) => /In\/Out/i.test(x.text)); s.value = o.value; s.dispatchEvent(new Event('change')); }
+      document.querySelectorAll('#toasts .toast').forEach((x) => x.remove());
+    },
+  },
+  // Blog 2026-11-20: voice on A1, music on A2 with Auto Duck (volume keyframes dip under speech).
+  music: {
+    size: [1500, 888], wait: 1500,
+    async setup() {
+      SH.ready(); RS.state.project.name = 'Travel Vlog'; RS.emit('project-change');
+      await SH.add(await SH.clip({ name: 'travel.mp4', kind: 'ocean', secs: 30, w: 640, h: 360, fps: 15 }), 'video');
+      await SH.add(await T.fixture('speech.m4a'), 'audio', 0, 2);
+      const m = await SH.add(SH.music({ name: 'background-music.wav', secs: 30, gain: 0.45 }), 'audio', 1, 0);
+      for (let i = 0; i < 60 && !RS.state.project.clips.filter((c) => c.type === 'audio').every((c) => RS.runtime[c.mediaId] && RS.runtime[c.mediaId].peaks); i++) await new Promise((r) => setTimeout(r, 100));
+      RS.creative.duck([RS.getClip(m.id)]);
+      T.select(m.id);
+      SH.tab('effectControls');
+      SH.finish(5);
+      await new Promise((r) => setTimeout(r, 300));
+      document.querySelectorAll('.tl-scroller').forEach((x) => { x.scrollTop = x.scrollHeight; });
+      document.querySelectorAll('#toasts .toast').forEach((x) => x.remove());
+    },
+  },
   privacy: {
     size: [1500, 888],
     async setup() { RS.state.project.name = 'Untitled'; await RS.web.home(); },

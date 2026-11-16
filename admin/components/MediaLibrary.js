@@ -5,7 +5,7 @@ import { MediaGrid, uploadImage } from './MediaPicker';
 import { adminSrc } from '@/lib/assets';
 
 const kb = (n) => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
-const DB_LIMIT = 512 * 1048576; // MongoDB Atlas free tier
+const DB_LIMIT = 5 * 1024 * 1048576; // Cloudflare D1 free plan: 5 GB
 
 export default function MediaLibrary() {
   const [items, setItems] = useState([]);
@@ -37,7 +37,7 @@ export default function MediaLibrary() {
           <Icon name="upload" /> Drop images here or <button className="btn small" onClick={() => input.current.click()}>Upload</button>
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => upload([...e.target.files])} />
           <div className="hint">Images are resized to 1600 px and compressed to WebP (usually under 400 KB) before upload.</div>
-          <div className="hint">{items.length} image{items.length === 1 ? '' : 's'} · {kb(items.reduce((n, m) => n + (m.size || 0), 0))} of the 512 MB database ({(items.reduce((n, m) => n + (m.size || 0), 0) / DB_LIMIT * 100).toFixed(1)} %)</div>
+          <div className="hint">{items.length} image{items.length === 1 ? '' : 's'} · {kb(items.reduce((n, m) => n + (m.size || 0), 0))} of the 5 GB database ({(items.reduce((n, m) => n + (m.size || 0), 0) / DB_LIMIT * 100).toFixed(2)} %)</div>
         </div>
         {msg && (msg.err ? <div className="err">{msg.err}</div> : <div className="okmsg">{msg.ok}</div>)}
         <MediaGrid items={items} selected={sel && sel.id} onSelect={setSel} />

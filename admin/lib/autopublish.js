@@ -4,7 +4,7 @@
 //  • This Mac: a background promise in the Node server.
 // Overlapping changes are coalesced: one run at a time, plus one more if something changed meanwhile.
 import { publishSite } from './publish';
-import { db } from './db';
+import { setSettings } from './db';
 
 let running = null, again = false;
 function run() {
@@ -14,7 +14,7 @@ function run() {
       do { again = false; await publishSite(); } while (again);
     } catch (e) {
       console.error('auto publish failed:', e.message);
-      try { await (await db()).collection('settings').updateOne({ _id: 'site' }, { $set: { lastPublish: { at: new Date(), ok: false, auto: true, log: e.message } } }, { upsert: true }); } catch { /* ignore */ }
+      try { await setSettings({ lastPublish: { at: new Date(), ok: false, auto: true, log: e.message } }); } catch { /* ignore */ }
     } finally { running = null; }
   })();
   return running;

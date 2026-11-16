@@ -1,8 +1,10 @@
 // Blog post, 2026-11-14: "How to Edit YouTube Shorts" — saved through savePost (cleans HTML, scores SEO).
-// node --env-file=.env.local scripts/content/post-2026-11-14-edit-youtube-shorts.mjs   (MONGODB_DB decides where)
-import { db } from '../../lib/db.js';
-import { savePost } from '../../lib/posts.js';
-import { seoReport } from '../../lib/score.js';
+// node --env-file=.env.local scripts/content/post-2026-11-14-edit-youtube-shorts.mjs [--live]   (local copy, or the live database)
+import { useD1 } from '../d1.mjs';
+const proxy = await useD1();
+const { all, run } = await import('../../lib/db.js');
+const { savePost, findPost, getPost } = await import('../../lib/posts.js');
+const { seoReport } = await import('../../lib/score.js');
 
 const fig = (src, alt, cap) => `<figure><img src="${src}" alt="${alt}"><figcaption>${cap}</figcaption></figure>`;
 const tip = (html) => `<blockquote><p><strong>Tip:</strong> ${html}</p></blockquote>`;
@@ -65,13 +67,12 @@ const post = {
   contentHtml: html, order: 99,
 };
 
-const d = await db();
-const prev = await d.collection('posts').findOne({ section: 'blog', slug: post.slug });
-const { id } = await savePost(prev ? String(prev._id) : null, post, { email: 'content-script' });
-const now = await d.collection('posts').findOne({ _id: id });
-const others = (await d.collection('posts').find({ _id: { $ne: id }, focusKeyword: { $ne: '' } }).toArray()).map((x) => ({ title: x.title, focusKeyphrase: x.focusKeyword }));
+const prev = await findPost('blog', post.slug);
+const { id } = await savePost(prev ? prev._id : null, post, { email: 'content-script' });
+const now = await getPost(id);
+const others = (await all(`SELECT title, json_extract(doc, '$.focusKeyword') AS k FROM posts WHERE id <> ? AND ifnull(json_extract(doc, '$.focusKeyword'), '') <> ''`, id)).map((x) => ({ title: x.title, focusKeyphrase: x.k }));
 const r = seoReport(now, others);
-await d.collection('posts').updateOne({ _id: id }, { $set: { seoScore: r.score } });
-console.log(`${process.env.MONGODB_DB}: ${prev ? 'updated' : 'created'} ${post.slug} — score ${r.score}, ${r.words} words`);
+await run(`UPDATE posts SET doc = json_set(doc, '$.seoScore', ?) WHERE id = ?`, r.score, id);
+console.log(`${prev ? 'updated' : 'created'} ${post.slug} — score ${r.score}, ${r.words} words`);
 console.log('not good:', [...r.seo, ...r.read].filter((x) => x.status !== 'good').map((x) => x.label + ': ' + x.text).join('\n  ') || '—');
-process.exit(0);
+await proxy.dispose(); process.exit(0);

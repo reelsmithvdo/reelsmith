@@ -28,6 +28,6 @@ Make a video small enough to email, share in a chat or upload faster. Reelsmith 
 ### Is compressing private?
 Yes. The file is processed in your browser; there is no upload, so it is also faster than online services for large files.
 ### How small will my file be?
-It depends on length and settings. A minute of 540p review copy is usually a few megabytes.
+It depends on length and settings. The Export dialog shows an **Estimated file size** before you export: at 30 fps a minute is about 17 MB at 1280×720 Medium and about 12 MB at 1280×720 Low (small file). More in [how to compress a video without losing quality](/blog/compress-video-without-losing-quality/).
 
 More: [[export|Exporting a video]].
