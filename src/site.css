@@ -28,6 +28,10 @@ img { max-width: 100%; height: auto; }
 .site-head nav { display: flex; gap: 4px; flex: 1; }
 .site-head nav a { color: var(--text-2); padding: 6px 10px; border-radius: 6px; }
 .site-head nav a:hover, .site-head nav a[aria-current] { color: var(--text); background: var(--panel); text-decoration: none; }
+.search-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px 0 11px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--text-2); font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.search-btn:hover { color: var(--text); border-color: #3d4450; background: var(--panel); }
+.search-btn kbd { font: 11px/1.5 inherit; color: var(--text-3); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+@media (max-width: 1060px) { .search-btn span, .search-btn kbd { display: none; } .search-btn { width: 36px; padding: 0; justify-content: center; } }
 
 main { min-height: 60vh; padding: 36px 0 56px; }
 h1 { font-size: clamp(30px, 4.4vw, 44px); line-height: 1.15; margin: 8px 0 14px; letter-spacing: -.4px; }
@@ -102,7 +106,8 @@ h3 { font-size: 19px; margin: 24px 0 8px; }
   body { font-size: 16px; }
   .site-head .wrap { gap: 10px; height: auto; min-height: 56px; flex-wrap: wrap; padding-top: 8px; padding-bottom: 8px; }
   .site-head nav { order: 3; flex-basis: 100%; overflow-x: auto; }
-  .site-head .btn { margin-left: auto; padding: 7px 12px; }
+  .site-head .search-btn { margin-left: auto; }
+  .site-head .btn { padding: 7px 12px; }
   main { padding-top: 22px; }
   .lead { font-size: 17px; }
   .cards, .doc-list { grid-template-columns: 1fr; }

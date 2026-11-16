@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How Reelsmith handles your data. Your videos are processed on your own computer and never uploaded.
-updated: 2026-11-10
+updated: 2026-11-16
 ---
 Reelsmith is designed so that your videos, images and audio stay on your computer. This page explains what data is involved when you use the website.
 
@@ -31,11 +31,19 @@ If you send a report, we receive what you type, the email address if you give on
 ## Hosting
 The website is served by Cloudflare. Like any web host, Cloudflare processes technical request data (IP address, browser type, time of request) to deliver and protect the site.
 
+## Advertising
+Reelsmith is free because it is paid for by advertising. We use **Google AdSense**, an advertising service of Google, to show ads on the website pages (articles, tools, tutorials and documentation) — never over the editor or your video.
+- Ads load **only if you allow Advertising** in the cookie banner. Until then no ad code is loaded.
+- Google and its partners (third-party vendors) use cookies to serve ads based on your previous visits to this and other websites. Google's advertising cookies let it and its partners show you ads based on those visits.
+- You can turn off personalised ads in Google's [Ads Settings](https://adssettings.google.com/), and opt out of other vendors' personalised ads at [aboutads.info](https://www.aboutads.info/choices/) or [youronlinechoices.eu](https://www.youronlinechoices.eu/).
+- How Google uses data from sites that use its services: [policies.google.com/technologies/partner-sites](https://policies.google.com/technologies/partner-sites). Google's advertising policy: [policies.google.com/technologies/ads](https://policies.google.com/technologies/ads).
+- Ads never receive your videos, project contents, or anything you type into the editor.
+
 ## Cookies and your choices
-Reelsmith does not set tracking or advertising cookies today. The first time you visit, a small banner asks for your choice:
+Reelsmith sets no analytics or advertising cookies until you allow them. The first time you visit, a small banner asks for your choice:
 - **Essential** (always on): browser storage that makes the app work — your saved projects, settings, the caption engine, and your privacy choice itself.
 - **Analytics** (off unless you agree): we use **Google Analytics** to understand how many people visit, which pages they read, which country and type of device they use, and how they found Reelsmith. It sets Google Analytics cookies (`_ga`, `_ga_*`) and sends this usage data to Google. It never receives your videos, project contents, or anything you type into the editor. Google's privacy policy: https://policies.google.com/privacy
-- **Advertising** (off unless you agree): not used yet. If we show ads in the future, they will only load with your consent, and this policy will be updated first with the provider's name.
+- **Advertising** (off unless you agree): lets Google AdSense show and measure ads, as described under *Advertising* above. Google and its partners may then set advertising cookies.
 
 Change your choice at any time with **Cookie settings** at the bottom of every page, or in the editor under **Help ▸ Cookie Settings…**.
 

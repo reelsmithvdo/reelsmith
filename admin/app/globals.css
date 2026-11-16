@@ -165,3 +165,7 @@ table.t td:first-child { max-width: 200px; overflow: hidden; text-overflow: elli
 
 @media (max-width: 1100px) { .top-split { grid-template-columns: 1fr; } .top-split .stats4 { grid-column: auto; } .g4, .g6 { grid-template-columns: repeat(2, 1fr); } .g3 { grid-template-columns: 1fr; } .edit-grid { grid-template-columns: 1fr; } .edit-side { position: static; } }
 @media (max-width: 760px) { .shell { grid-template-columns: 1fr; } .side { position: static; height: auto; } .main { padding: 22px 16px; } .g2, .row2 { grid-template-columns: 1fr; } .feat { width: 100%; } }
+
+/* Dashboard: visitors right now */
+.live-now { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 16px; }
+.live-now .dot { width: 9px; height: 9px; border-radius: 50%; background: #22a35a; box-shadow: 0 0 0 4px rgba(34,163,90,.18); }

@@ -24,8 +24,10 @@ export function BarList({ rows, fmt = (v) => v.toLocaleString('en-US') }) {
   const max = Math.max(...rows.map((r) => r.value), 1);
   return <div className="bars">{rows.map((r) => <div className="bar-row" key={r.key}><div className="lbl"><span>{r.key}</span><b>{fmt(r.value)}</b></div><div className="bar-track"><div className="bar-fill" style={{ width: (r.value / max * 100) + '%' }} /></div></div>)}</div>;
 }
-export function DailyChart({ series }) {
-  const [m, setM] = useState('clicks');
+// Bars per day. metrics = [[key, label], …]; the tabs switch between them.
+export function DailyChart({ series, metrics = [['clicks', 'Clicks'], ['impressions', 'Impressions']], color = '#f0a83a' }) {
+  const [m, setM] = useState(metrics[0][0]);
+  const label = (metrics.find((x) => x[0] === m) || metrics[0])[1];
   const vals = series.map((d) => d[m]);
   const max = Math.max(4, ...vals);
   const W = 1000, H = 230, pl = 36, pb = 28, bw = (W - pl) / series.length;
@@ -33,12 +35,12 @@ export function DailyChart({ series }) {
   const lab = (i) => new Date(series[i].date + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
   return (
     <div className="card">
-      <div className="card-h"><Icon name="chart" />{m === 'clicks' ? 'Clicks' : 'Impressions'} per day
-        <span className="r"><span className="tabs" style={{ display: 'inline-flex' }}>{['clicks', 'impressions'].map((k) => <a key={k} href="#" className={m === k ? 'on' : ''} onClick={(e) => { e.preventDefault(); setM(k); }}>{k[0].toUpperCase() + k.slice(1)}</a>)}</span></span>
+      <div className="card-h"><Icon name="chart" />{label} per day
+        <span className="r"><span className="tabs" style={{ display: 'inline-flex' }}>{metrics.map(([k, l]) => <a key={k} href="#" className={m === k ? 'on' : ''} onClick={(e) => { e.preventDefault(); setM(k); }}>{l}</a>)}</span></span>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }} role="img" aria-label={`${m} per day`}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto' }} role="img" aria-label={`${label} per day`}>
         {ticks.map((t) => { const y = (H - pb) - (t / max) * (H - pb - 10); return <g key={t}><line x1={pl} x2={W} y1={y} y2={y} stroke="#eef0f3" /><text x={pl - 10} y={y + 4} textAnchor="end" fontSize="12" fill="#8a909c">{t}</text></g>; })}
-        {series.map((d, i) => { const h = (d[m] / max) * (H - pb - 10); return <rect key={d.date} x={pl + i * bw + bw * 0.15} y={(H - pb) - h} width={bw * 0.7} height={h} rx="3" fill="#f0a83a"><title>{`${d.date}: ${d[m]}`}</title></rect>; })}
+        {series.map((d, i) => { const h = (d[m] / max) * (H - pb - 10); return <rect key={d.date} x={pl + i * bw + bw * 0.15} y={(H - pb) - h} width={bw * 0.7} height={h} rx="3" fill={color}><title>{`${d.date}: ${d[m]}`}</title></rect>; })}
         {[0, Math.floor(series.length / 2), series.length - 1].map((i) => <text key={i} x={pl + i * bw + bw / 2} y={H - 6} textAnchor="middle" fontSize="12" fill="#8a909c">{lab(i)}</text>)}
       </svg>
     </div>

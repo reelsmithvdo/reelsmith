@@ -2,9 +2,10 @@
 // Google Analytics 4 (measurement ID below) loads ONLY after the visitor allows Analytics, and only on
 // the live domain — never on test servers or previews, so reports stay clean.
 //
-// Today Reelsmith sets no tracking or advertising cookies, so nothing waits on this choice yet.
-// When ads or analytics are added, load them ONLY through ReelsmithConsent.onChange(), e.g.
-//   ReelsmithConsent.onChange((c) => { if (c.ads) loadAdScript(); });
+// Ads (Google AdSense) are switched on by content/site.json "adsenseClient": the build then adds
+// <meta name="google-adsense-account"> to every page and <meta name="rs-ads" content="auto"> to the website
+// pages. Auto ads load below ONLY on pages with rs-ads (never inside the editor) and only after the
+// visitor allows Advertising. Anything else ad-related must also wait for ReelsmithConsent.onChange().
 // Google Consent Mode v2 defaults are set to "denied" below and updated from the visitor's choice.
 // Note: to show Google ads to visitors in the EEA, UK and Switzerland, Google requires a
 // Google-certified consent platform (for example the free "Privacy & messaging" CMP in AdSense).
@@ -42,15 +43,31 @@
     document.head.append(s);
   }
 
+  // Google AdSense Auto ads: website pages only (meta rs-ads), after Advertising consent, on the live domain.
+  const meta = (n) => { const m = document.querySelector(`meta[name="${n}"]`); return m ? m.content : ''; };
+  const ADS_CLIENT = meta('google-adsense-account');
+  let adsLoaded = false;
+  function loadAds() {
+    if (adsLoaded || !LIVE || !ADS_CLIENT || meta('rs-ads') !== 'auto') return;
+    adsLoaded = true;
+    const s = document.createElement('script');
+    s.async = true;
+    s.crossOrigin = 'anonymous';
+    s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + encodeURIComponent(ADS_CLIENT);
+    document.head.append(s);
+  }
+
   let current = read();
   if (current) pushGoogle(current);
   if (current && current.analytics) loadAnalytics();
+  if (current && current.ads) loadAds();
 
   function decide(ads, analytics) {
     current = { v: VERSION, ads: !!ads, analytics: !!analytics, at: new Date().toISOString() };
     save(current);
     pushGoogle(current);
     if (current.analytics) loadAnalytics();
+    if (current.ads) loadAds();
     close();
     listeners.forEach((fn) => { try { fn(current); } catch (err) { console.warn(err); } });
   }
@@ -73,7 +90,7 @@
     const c = current || { ads: false, analytics: false };
     const ess = toggle('Essential', 'Saves your projects, settings and the caption engine in this browser. Always on.', true, true);
     const ana = toggle('Analytics', 'Google Analytics statistics (pages visited, device type, country) that help us improve Reelsmith.', c.analytics);
-    const ads = toggle('Advertising', 'Lets ads be shown and measured. Keeps Reelsmith free (not used yet).', c.ads);
+    const ads = toggle('Advertising', ADS_CLIENT ? 'Lets Google show and measure ads on the website pages (never over the editor). Ads keep Reelsmith free.' : 'Lets ads be shown and measured. Keeps Reelsmith free (not used yet).', c.ads);
     const details = el('div', { class: 'rc-details' }, ess.row, ana.row, ads.row);
     if (!withDetails) details.hidden = true;
     const customize = el('button', { class: 'rc-btn ghost', type: 'button', onclick: () => {
@@ -83,7 +100,8 @@
     box = el('div', { class: 'rc-box', role: 'dialog', 'aria-label': 'Privacy choices', 'aria-live': 'polite' },
       el('p', { class: 'rc-text' },
         el('b', null, 'Your privacy. '),
-        'Your videos never leave your computer. Reelsmith only stores what it needs to work in your browser. With your OK, we also use Google Analytics to count visits (and may show ads in the future). ',
+        ADS_CLIENT ? 'Your videos never leave your computer. Reelsmith only stores what it needs to work in your browser. With your OK, we also use Google Analytics to count visits and Google AdSense to show ads that keep Reelsmith free. '
+          : 'Your videos never leave your computer. Reelsmith only stores what it needs to work in your browser. With your OK, we also use Google Analytics to count visits (and may show ads in the future). ',
         el('a', { href: '/privacy/' }, 'Privacy policy')),
       details,
       el('div', { class: 'rc-actions' },
@@ -108,6 +126,7 @@
   window.ReelsmithConsent = {
     get: () => current,                              // null until the visitor has chosen
     analyticsLoaded: () => gaLoaded,                 // for tests
+    adsLoaded: () => adsLoaded,                      // for tests
     isLive: () => LIVE,
     open: () => open(true),                          // "Cookie settings" links call this
     onChange: (fn) => { listeners.push(fn); if (current) fn(current); },

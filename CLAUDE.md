@@ -46,6 +46,10 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   visitor). Owner added `BREVO_API_KEY` (API key, xkeysib-…) and verified sender "Reelsmith <reelsmith.vdo@gmail.com>".
   Not yet confirmed with a real message — ask the owner whether a test from the live form arrived.
 - **Search Console:** sitemap resubmitted 2026-11-09 (94 URLs); from now on the admin re-sends it automatically.
+- **2026-11-16 (local, not yet pushed when written):** site search like algomatryx.com (`src/search.js`, header button
+  "Search ⌘K", also `/` and Ctrl+K; index `src/search-index.json` built by `npm run site`; on the editor page only in the
+  intro; GA event `search`). AdSense prep (see "Ads / AdSense" below). Admin dashboard Analytics: realtime visitors,
+  deltas vs previous 30 days, daily chart, channels, sources, site-search terms. Blog posts 2026-11-14/15 published.
 
 ## Next steps (suggested, not started)
 - New posts: on hold by the owner's choice. When resumed: **3–4 strong posts a week**, not mass-produced
@@ -56,6 +60,18 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   e.g. contact@reelsmithapp.com in wrangler.jsonc. Ads (see Roadmap 2). Homepage translations.
 - Known flake: touch-mode tests occasionally fail when a tap lands while the page is still busy (long-press
   logic in touch.js); re-run before assuming a regression.
+
+## Ads / AdSense (prepared 2026-11-16)
+- One switch: `content/site.json` `"adsenseClient": "ca-pub-…"` then `npm run site`. Empty = no ad code at all.
+  Set = `<meta name="google-adsense-account">` on every page (incl. the editor homepage, for AdSense site verification),
+  `src/ads.txt`, CSP opened for Google ad hosts, and `<meta name="rs-ads" content="auto">` on website pages only.
+- `src/consent.js` `loadAds()` loads AdSense Auto ads only on pages with rs-ads (never the editor), only on the live
+  domain, only after the visitor allows Advertising.
+- Privacy Policy has the Advertising section AdSense requires (Google/third-party cookies, Ads Settings opt-out);
+  About explains Algo Matryx + how the site stays free.
+- Owner steps: sign up at adsense.google.com (Reelsmith email), add site reelsmithapp.com, give Claude the ca-pub ID →
+  set it, test, push → in AdSense click Verify (meta tag or ads.txt) → Request review. After approval: AdSense ▸ Privacy &
+  messaging ▸ GDPR message (Google-certified CMP required for EEA/UK/CH ads).
 
 ## Accounts and services (all on the Reelsmith email)
 | What | Where |

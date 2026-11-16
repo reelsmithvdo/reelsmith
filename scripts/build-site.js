@@ -13,6 +13,22 @@ const CONTENT = path.join(ROOT, 'content');
 const ORIGIN = 'https://reelsmithapp.com';
 const TODAY = new Date().toISOString().slice(0, 10);
 const GENERATED = ['features', 'tools', 'docs', 'tutorials', 'blog', 'about', 'privacy', 'terms', 'contact'];
+// Site settings (content/site.json). adsenseClient = the AdSense publisher ID ("ca-pub-1234567890123456").
+// Empty: no ad code anywhere. Set: verification meta tag on every page, /ads.txt, CSP opened for Google ads,
+// and src/consent.js loads Auto ads on the website pages (never in the editor) after the visitor allows ads.
+const SITE = JSON.parse(fs.readFileSync(path.join(CONTENT, 'site.json'), 'utf8'));
+const ADSENSE = (SITE.adsenseClient || '').trim();
+if (ADSENSE && !/^ca-pub-\d{10,20}$/.test(ADSENSE)) throw new Error('content/site.json: adsenseClient must look like ca-pub-1234567890123456');
+// Hosts Google's ads need (AdSense code, ad frames, ad images from many advertisers, quality checks).
+const ADS_CSP = { script: ' https://pagead2.googlesyndication.com https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.gstatic.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com',
+  frame: " 'self' https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google",
+  connect: ' https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com https://*.adtrafficquality.google https://fundingchoicesmessages.google.com' };
+const csp = (base) => !ADSENSE ? base : base
+  .replace(/script-src ([^;]+)/, (m) => m + ADS_CSP.script)
+  .replace(/connect-src ([^;]+)/, (m) => m + ADS_CSP.connect)
+  .replace(/img-src ([^;]+)/, 'img-src $1 https:')
+  .replace(/object-src/, `frame-src${ADS_CSP.frame}; object-src`);
+const adsMeta = ADSENSE ? `<meta name="google-adsense-account" content="${ADSENSE}">\n` : '';
 
 // ---------------------------------------------------------------- help content
 const ctx = { globalThis: {} }; ctx.window = ctx.globalThis; vm.createContext(ctx);
@@ -95,6 +111,8 @@ const posts = (fromDb ? fromDb.filter((p) => p.section === 'blog') : readMd('blo
 const pages = Object.fromEntries(readMd('pages').map((p) => [p.slug, p]));
 
 // ---------------------------------------------------------------- layout
+// Site search (src/search.js): this button opens it; so do ⌘K / Ctrl+K and "/". Same markup in src/index.html's intro.
+const SEARCH_BTN = '<button type="button" class="search-btn" data-search aria-label="Search the site" aria-keyshortcuts="Meta+K Control+K"><svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Search</span><kbd>⌘K</kbd></button>';
 const NAV = [['Features', '/features/'], ['Tools', '/tools/'], ['Tutorials', '/tutorials/'], ['Docs', '/docs/'], ['Blog', '/blog/'], ['Contact', '/contact/']];
 function layout({ title, description, urlPath, body, section, jsonld = [], ogType = 'website', image }) {
   const url = ORIGIN + urlPath;
@@ -106,7 +124,8 @@ function layout({ title, description, urlPath, body, section, jsonld = [], ogTyp
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="${csp("default-src 'self'; img-src 'self' data: https://*.google-analytics.com https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; script-src 'self' https://www.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; object-src 'none'; base-uri 'self'")}">
+${adsMeta}${ADSENSE ? '<meta name="rs-ads" content="auto">\n' : ''}
 <title>${esc(fullTitle)}</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${url}">
@@ -123,6 +142,7 @@ function layout({ title, description, urlPath, body, section, jsonld = [], ogTyp
 <link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="/site.css">
 <script src="/consent.js" defer></script>
+<script src="/search.js" defer></script>
 ${ld}
 </head>
 <body>
@@ -131,6 +151,7 @@ ${ld}
   <div class="wrap">
     <a class="logo" href="/features/"><img src="/assets/icon-64.png" alt="" width="28" height="28">Reelsmith</a>
     <nav aria-label="Main">${NAV.map(([t, h]) => `<a href="${h}"${section === h ? ' aria-current="page"' : ''}>${t}</a>`).join('')}</nav>
+    ${SEARCH_BTN}
     <a class="btn" href="/">Open Editor</a>
   </div>
 </header>
@@ -369,6 +390,52 @@ write('/404.html', layout({ title: 'Page not found', description: 'This page doe
 const all = [{ loc: ORIGIN + '/', lastmod: TODAY, priority: 1.0 }, ...written];
 fs.writeFileSync(path.join(SRC, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${all.map((u) => `  <url><loc>${u.loc}</loc><lastmod>${u.lastmod}</lastmod><priority>${u.priority.toFixed(1)}</priority></url>`).join('\n')}\n</urlset>\n`);
 fs.writeFileSync(path.join(SRC, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin\n\nSitemap: ${ORIGIN}/sitemap.xml\n`);
+
+// ---------------------------------------------------------------- search index (src/search.js)
+// Small JSON list of every page worth finding. "k" = extra words to match (headings, opening text) that aren't shown.
+{
+  const h2s = (html) => [...String(html).matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => m[1].replace(/<[^>]+>/g, '')).join(' ');
+  const mdH2 = (md) => [...String(md).matchAll(/^##+ (.*)$/gm)].map((m) => plain(m[1])).join(' ');
+  const text = (html) => String(html).replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/g, ' ').replace(/\s+/g, ' ').trim();
+  const cut = (t, n) => (t.length <= n ? t : t.slice(0, t.lastIndexOf(' ', n)));
+  const e = (kind, title, desc, href, k = '') => ({ kind, title, desc: cut(desc || '', 140), href, k: cut(k.replace(/\s+/g, ' ').trim(), 600) });
+  const index = [
+    e('Page', 'Open the editor', 'Start editing in your browser — free, nothing uploaded', '/', 'home app start new project online video editor'),
+    e('Page', 'Features', feat.description, '/features/', 'what can it do overview'),
+    e('Page', 'Free online video tools', 'All quick tools: subtitles, trim, merge, crop, resize, compress…', '/tools/', 'tools list'),
+    e('Page', 'Tutorials', 'Step-by-step guides', '/tutorials/', 'how to guides learn'),
+    e('Page', 'Documentation', 'How every part of Reelsmith works', '/docs/', 'help manual docs'),
+    e('Page', 'Blog', 'News and editing tips', '/blog/', 'articles posts news'),
+    e('Page', 'Contact', 'Questions, partnerships, press — we reply by email', '/contact/', 'email support help get in touch message business press'),
+    e('Page', 'Report a bug', 'Something broken? Send a report from the editor', '/?report=bug', 'problem error crash issue not working'),
+    e('Page', 'Request a feature', 'Tell us what to build next', '/?report=feature', 'idea suggestion wish'),
+    e('Page', 'About Reelsmith', pages.about.description, '/about/', 'who company team algo matryx'),
+    e('Page', 'Privacy Policy', 'How Reelsmith handles your data', '/privacy/', 'gdpr cookies data analytics ads'),
+    e('Page', 'Terms of Use', 'Terms for using Reelsmith', '/terms/', 'legal terms conditions'),
+    ...tools.map((t) => e('Tool', t.title, t.description, `/tools/${t.slug}/`, mdH2(t.body) + ' ' + (t.metaTitle || ''))),
+    ...tutorials.map((a) => e('Tutorial', a.title, a.excerpt || a.description, `/tutorials/${a.slug}/`, [a.categoryName, (a.keywords || []).join(' '), a.html != null ? h2s(a.html) : mdH2(a.body)].filter(Boolean).join(' '))),
+    ...posts.map((a) => e('Blog', a.title, a.excerpt || a.description, `/blog/${a.slug}/`, [a.categoryName, (a.keywords || []).join(' '), a.html != null ? h2s(a.html) : mdH2(a.body)].filter(Boolean).join(' '))),
+    ...ordered.map((a) => e('Docs', a.title, describe(a.body.replace(/^\s*\d+\. /gm, ''), 140), `/docs/${a.id}/`, a.cat + ' ' + mdH2(a.body) + ' ' + cut(plain(a.body), 300))),
+  ];
+  fs.writeFileSync(path.join(SRC, 'search-index.json'), JSON.stringify(index));
+}
+
+// ---------------------------------------------------------------- AdSense: ads.txt + editor homepage meta/CSP
+{
+  const adsTxt = path.join(SRC, 'ads.txt');
+  if (ADSENSE) fs.writeFileSync(adsTxt, `google.com, ${ADSENSE.replace(/^ca-/, '')}, DIRECT, f08c47fec0942fa0\n`);
+  else fs.rmSync(adsTxt, { force: true });
+  const f = path.join(SRC, 'index.html');
+  let html = fs.readFileSync(f, 'utf8').replace(/\n *<meta name="google-adsense-account" content="[^"]*">/, '');
+  if (ADSENSE) html = html.replace(/(<meta http-equiv="Content-Security-Policy"[^>]*>)/, `$1\n  <meta name="google-adsense-account" content="${ADSENSE}">`);
+  // The editor page's CSP lives in src/index.html: add (or remove) the ad hosts from the base policy kept there.
+  html = html.replace(/<meta http-equiv="Content-Security-Policy" content="([^"]*)">/, (m, c) => {
+    const base = c.replace(/ https:(?=;|$)/, '').replace(/; frame-src [^;]*/, '').replace(/ https:\/\/(pagead2|\*)\.googlesyndication\.com| https:\/\/\*\.google\.com| https:\/\/\*\.doubleclick\.net| https:\/\/\*\.gstatic\.com| https:\/\/\*\.adtrafficquality\.google| https:\/\/fundingchoicesmessages\.google\.com/g, '');
+    if (!ADSENSE) return `<meta http-equiv="Content-Security-Policy" content="${base}">`;
+    return `<meta http-equiv="Content-Security-Policy" content="${base.replace(/script-src ([^;]+)/, (x) => x + ADS_CSP.script).replace(/connect-src ([^;]+)/, (x) => x + ADS_CSP.connect).replace(/img-src ([^;]+)/, 'img-src $1 https:') + '; frame-src' + ADS_CSP.frame}">`;
+  });
+  fs.writeFileSync(f, html);
+}
 
 // ---------------------------------------------------------------- checks
 const exists = (href) => {

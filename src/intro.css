@@ -10,6 +10,10 @@ html.intro-on, html.intro-on body { overflow: hidden; }
 .intro-logo { display: inline-flex; align-items: center; gap: 9px; font-weight: 750; font-size: 18px; }
 .intro-bar nav { display: flex; gap: 4px; flex: 1; }
 .intro-bar nav a { color: #aab1bc; padding: 6px 10px; border-radius: 6px; }
+.intro-bar .search-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px 0 11px; border: 1px solid #2c313a; border-radius: 8px; background: transparent; color: #aab1bc; font: inherit; font-size: 14px; cursor: pointer; white-space: nowrap; }
+.intro-bar .search-btn:hover { color: #e6e9ee; background: #1b1e24; }
+.intro-bar .search-btn kbd { font: 11px/1.5 inherit; color: #7a828f; border: 1px solid #2c313a; border-radius: 4px; padding: 0 5px; }
+@media (max-width: 1060px) { .intro-bar .search-btn span, .intro-bar .search-btn kbd { display: none; } .intro-bar .search-btn { width: 36px; padding: 0; justify-content: center; } }
 .intro-bar nav a:hover { color: #e6e9ee; background: #1b1e24; text-decoration: none; }
 .intro-btn { font: inherit; font-weight: 650; color: #1a1306; background: #f0a83a; border: 0; border-radius: 8px; padding: 9px 16px; cursor: pointer; }
 .intro-btn:hover { background: #ffbf5e; }

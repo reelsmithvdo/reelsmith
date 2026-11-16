@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Icon from '@/components/Icon';
 import { Stat, Delta, BarList, DailyChart } from '@/components/Dash';
 import { counts, listPosts, effectiveStatus } from '@/lib/posts';
-import { searchConsole, analytics, serviceAccountEmail } from '@/lib/google';
+import { searchConsole, analytics, analyticsRealtime, serviceAccountEmail } from '@/lib/google';
 
 export const metadata = { title: 'Dashboard' };
 const n = (v) => Math.round(v).toLocaleString('en-US');
@@ -17,8 +17,9 @@ const greeting = () => { const h = +new Date().toLocaleString('en-US', { hour: '
 const safe = (p) => p.then((v) => ({ v }), (e) => ({ e: e.message }));
 
 export default async function Dashboard() {
-  const [c, recent, gs, ga] = await Promise.all([counts(), listPosts(), safe(searchConsole()), safe(analytics())]);
-  const s = gs.v, a = ga.v;
+  const [c, recent, gs, ga, rt] = await Promise.all([counts(), listPosts(), safe(searchConsole()), safe(analytics()), safe(analyticsRealtime())]);
+  const s = gs.v, a = ga.v, live = rt.v;
+  const vs = (k) => <Delta now={a[k]} prev={a.previous[k]} />;
   return (
     <>
       <div className="page-head">
@@ -69,13 +70,20 @@ export default async function Dashboard() {
       {ga.e ? <div className="connect"><b>Connect Google Analytics</b> — {ga.e.split('.')[0]}.
         <ol><li>Enable the <a href="https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com?project=reel-smith" target="_blank" rel="noopener">Google Analytics Data API</a> (click <b>Enable</b>).</li>
           <li>Google Analytics ▸ Admin ▸ Property access management ▸ <b>+</b> ▸ Add users: <code>{serviceAccountEmail()}</code> as <b>Viewer</b>.</li></ol></div> : <>
+        {live && <div className="card live-now"><span className="dot" aria-hidden="true" /><b>{live.now}</b> {live.now === 1 ? 'visitor' : 'visitors'} on the site right now <span className="muted small">(last 30 minutes{live.pages.length ? ': ' + live.pages.map((p) => p.key.replace(/ \| Reelsmith$/, '')).slice(0, 3).join(' · ') : ''})</span></div>}
         <div className="grid g6">
-          <Stat label="Visitors" value={n(a.visitors)} icon="users" color="blue" />
-          <Stat label="New visitors" value={n(a.newVisitors)} icon="userplus" color="green" />
-          <Stat label="Sessions" value={n(a.sessions)} icon="pulse" color="violet" />
-          <Stat label="Page views" value={n(a.pageViews)} icon="eye" color="blue" />
-          <Stat label="Avg. session" value={dur(a.avgSession)} icon="clock" color="amber" />
-          <Stat label="Engagement rate" value={pct(a.engagement)} icon="percent" color="green" />
+          <Stat label="Visitors" value={n(a.visitors)} icon="users" color="blue" delta={vs('visitors')} sub="vs previous 30 days" />
+          <Stat label="New visitors" value={n(a.newVisitors)} icon="userplus" color="green" delta={vs('newVisitors')} sub="vs previous 30 days" />
+          <Stat label="Sessions" value={n(a.sessions)} icon="pulse" color="violet" delta={vs('sessions')} sub="vs previous 30 days" />
+          <Stat label="Page views" value={n(a.pageViews)} icon="eye" color="blue" delta={vs('pageViews')} sub="vs previous 30 days" />
+          <Stat label="Avg. session" value={dur(a.avgSession)} icon="clock" color="amber" delta={vs('avgSession')} sub="vs previous 30 days" />
+          <Stat label="Engagement rate" value={pct(a.engagement)} icon="percent" color="green" delta={vs('engagement')} sub="vs previous 30 days" />
+        </div>
+        <div style={{ marginTop: 16 }}><DailyChart series={a.series} metrics={[['visitors', 'Visitors'], ['pageViews', 'Page views']]} color="#4f7cff" /></div>
+        <div className="grid g3" style={{ marginTop: 16 }}>
+          <div className="card"><div className="card-h"><Icon name="trend" />How visitors find us <span className="muted small">Sessions</span></div><BarList rows={a.channels} /></div>
+          <div className="card"><div className="card-h"><Icon name="globe" />Top sources <span className="muted small">Sessions</span></div><BarList rows={a.sources.map((r) => ({ ...r, key: r.key === '(direct)' ? 'Direct (typed or bookmarked)' : r.key }))} /></div>
+          <div className="card"><div className="card-h"><Icon name="search" />Searched on the site <span className="muted small">Searches</span></div>{a.searches.length ? <BarList rows={a.searches} /> : <div className="empty">No site searches yet. Visitors' searches appear here.</div>}</div>
         </div>
         <div className="grid g3" style={{ marginTop: 16 }}>
           <div className="card"><div className="card-h"><Icon name="globe" />Top countries <span className="muted small">Visitors</span></div><BarList rows={a.countries} /></div>

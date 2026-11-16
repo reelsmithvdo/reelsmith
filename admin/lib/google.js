@@ -82,8 +82,8 @@ export function searchConsole() {
   });
 }
 
-async function ga(body) {
-  const r = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${process.env.GA_PROPERTY_ID}:runReport`, {
+async function ga(body, method = 'runReport') {
+  const r = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${process.env.GA_PROPERTY_ID}:${method}`, {
     method: 'POST',
     headers: { authorization: 'Bearer ' + await token('https://www.googleapis.com/auth/analytics.readonly'), 'content-type': 'application/json' },
     body: JSON.stringify(body),
@@ -92,19 +92,46 @@ async function ga(body) {
   if (!r.ok) throw new Error(j.error?.message || 'Analytics error ' + r.status);
   return j;
 }
-// Last 30 days of visitors.
+// Visitors right now (last 30 minutes). Cached briefly so reloading the dashboard stays cheap.
+export function analyticsRealtime() {
+  return cached('ga-rt', 60000, async () => {
+    const [tot, pages] = await Promise.all([
+      ga({ metrics: [{ name: 'activeUsers' }] }, 'runRealtimeReport'),
+      ga({ dimensions: [{ name: 'unifiedScreenName' }], metrics: [{ name: 'activeUsers' }], limit: 5 }, 'runRealtimeReport'),
+    ]);
+    return { now: +((tot.rows || [])[0]?.metricValues?.[0]?.value || 0), pages: (pages.rows || []).map((x) => ({ key: x.dimensionValues[0].value, value: +x.metricValues[0].value })) };
+  });
+}
+// Last 30 days of visitors, compared with the 30 days before, plus daily numbers, traffic sources and site-search terms.
 export function analytics() {
   return cached('ga', 15 * 60000, async () => {
-    const range = [{ startDate: '30daysAgo', endDate: 'today' }];
-    const [tot, countries, pages, devices] = await Promise.all([
-      ga({ dateRanges: range, metrics: ['activeUsers', 'newUsers', 'sessions', 'screenPageViews', 'averageSessionDuration', 'engagementRate'].map((name) => ({ name })) }),
-      ga({ dateRanges: range, dimensions: [{ name: 'country' }], metrics: [{ name: 'activeUsers' }], limit: 6, orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }] }),
-      ga({ dateRanges: range, dimensions: [{ name: 'pagePath' }], metrics: [{ name: 'screenPageViews' }], limit: 6, orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }] }),
-      ga({ dateRanges: range, dimensions: [{ name: 'deviceCategory' }], metrics: [{ name: 'activeUsers' }], limit: 4 }),
+    const range = [{ startDate: '29daysAgo', endDate: 'today' }];
+    const both = [...range, { startDate: '59daysAgo', endDate: '30daysAgo' }];
+    const top = (dim, metric, limit = 6, extra = {}) => ga({ dateRanges: range, dimensions: [{ name: dim }], metrics: [{ name: metric }], limit, orderBys: [{ metric: { metricName: metric }, desc: true }], ...extra });
+    const M = ['activeUsers', 'newUsers', 'sessions', 'screenPageViews', 'averageSessionDuration', 'engagementRate'];
+    const [tot, byDate, countries, pages, devices, channels, sources, searches] = await Promise.all([
+      ga({ dateRanges: both, metrics: M.map((name) => ({ name })) }),
+      ga({ dateRanges: range, dimensions: [{ name: 'date' }], metrics: [{ name: 'activeUsers' }, { name: 'screenPageViews' }], limit: 100 }),
+      top('country', 'activeUsers'),
+      top('pagePath', 'screenPageViews', 8),
+      top('deviceCategory', 'activeUsers', 4),
+      top('sessionDefaultChannelGroup', 'sessions'),
+      top('sessionSource', 'sessions'),
+      top('searchTerm', 'eventCount', 8, { dimensionFilter: { filter: { fieldName: 'eventName', stringFilter: { value: 'search' } } } }),
     ]);
-    const v = (tot.rows || [])[0]?.metricValues?.map((m) => +m.value) || [0, 0, 0, 0, 0, 0];
+    // With two date ranges GA adds a "dateRange" dimension: date_range_0 = now, date_range_1 = before.
+    const pick = (name) => (tot.rows || []).find((r) => r.dimensionValues?.[0]?.value === name)?.metricValues?.map((m) => +m.value) || M.map(() => 0);
+    const v = pick('date_range_0'), p = pick('date_range_1');
+    const obj = (a) => ({ visitors: a[0], newVisitors: a[1], sessions: a[2], pageViews: a[3], avgSession: a[4], engagement: a[5] });
+    // Days in the property's time zone (Bangladesh), as GA reports them.
+    const day = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Dhaka' });
+    const series = [];
+    for (let i = 29; i >= 0; i--) {
+      const key = day(new Date(Date.now() - i * 86400000)), row = (byDate.rows || []).find((r) => r.dimensionValues[0].value === key.replace(/-/g, ''));
+      series.push({ date: key, visitors: row ? +row.metricValues[0].value : 0, pageViews: row ? +row.metricValues[1].value : 0 });
+    }
     const list = (r) => (r.rows || []).map((x) => ({ key: x.dimensionValues[0].value, value: +x.metricValues[0].value }));
-    return { visitors: v[0], newVisitors: v[1], sessions: v[2], pageViews: v[3], avgSession: v[4], engagement: v[5], countries: list(countries), pages: list(pages), devices: list(devices) };
+    return { ...obj(v), previous: obj(p), series, countries: list(countries), pages: list(pages).filter((x) => !x.key.startsWith('/admin')).slice(0, 6), devices: list(devices), channels: list(channels), sources: list(sources), searches: list(searches).filter((x) => x.key && x.key !== '(not set)') };
   });
 }
 
