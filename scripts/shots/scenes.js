@@ -36,6 +36,10 @@ function helpers() {
       g.fillStyle = '#20262e'; g.fillRect(w * 0.47, h * 0.62 + Math.sin(f / 9) * 2, w * 0.06, h * 0.2);
     },
   };
+  const imgCache = {};
+  const loadImg = (key) => imgCache[key] || (imgCache[key] = new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('footage ' + key + ' missing: run node scripts/shots/get-footage.js')); i.src = '/__footage/' + key + '.jpg'; }));
+  let speechBuf = null;
+  const speech = async () => speechBuf || (speechBuf = await new OfflineAudioContext(2, 48000, 48000).decodeAudioData(await (await fetch('/__fixtures/speech.m4a')).arrayBuffer()));
   window.SH = {
     async clip({ name, kind = 'sunset', w = 1280, h = 720, secs = 4, fps = 30, audio = false, freq = 220 }) {
       const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d');
@@ -53,6 +57,49 @@ function helpers() {
       await out.finalize();
       return new File([out.target.buffer], name || kind + '.mp4', { type: 'video/mp4' });
     },
+    // A real photo (scripts/shots/footage/<key>.jpg) as an MP4 with a slow push-in / pan, so it plays like footage.
+    // speech: seconds into tests/fixtures/speech.m4a to use as the clip's own sound (false = no audio).
+    // crop: [x, y, w, h] in 0..1 of the photo, to frame a detail (e.g. a face for a "second camera").
+    async photo({ key, name, w = 1280, h = 720, secs = 6, fps = 10, zoom = [1, 1.07], pan = [0, 0], speech: sp = false, crop = null, filter = '' }) {
+      const img = await loadImg(key);
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d');
+      const out = new MB.Output({ format: new MB.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new MB.BufferTarget() });
+      const vs = new MB.CanvasSource(cv, { codec: 'avc', bitrate: 4e6 }); out.addVideoTrack(vs, { frameRate: fps });
+      let as = null, ab = null;
+      if (sp !== false) {
+        const src = await speech(); const ctx = new OfflineAudioContext(2, Math.round(48000 * secs), 48000);
+        const n = ctx.createBufferSource(); n.buffer = src; n.loop = true; n.connect(ctx.destination); n.start(0, sp % src.duration);
+        ab = await ctx.startRendering(); as = new MB.AudioBufferSource({ codec: 'aac', bitrate: 96e3 }); out.addAudioTrack(as);
+      }
+      await out.start();
+      const [cx, cy, cw, ch] = crop || [0, 0, 1, 1];
+      const iw = img.naturalWidth * cw, ih = img.naturalHeight * ch;
+      const n = Math.round(secs * fps);
+      for (let i = 0; i < n; i++) {
+        const u = n > 1 ? i / (n - 1) : 0, z = zoom[0] + (zoom[1] - zoom[0]) * u;
+        const s = Math.max(w / iw, h / ih) * z, dw = iw * s, dh = ih * s;
+        g.filter = filter || 'none';
+        g.drawImage(img, img.naturalWidth * cx, img.naturalHeight * cy, iw, ih, (w - dw) / 2 + pan[0] * u * w, (h - dh) / 2 + pan[1] * u * h, dw, dh);
+        await vs.add(i / fps, 1 / fps);
+      }
+      if (as) await as.add(ab);
+      await out.finalize();
+      return new File([out.target.buffer], name || key + '.mp4', { type: 'video/mp4' });
+    },
+    // The photo itself as an image file (for slideshows).
+    async still(key, name) { const b = await (await fetch('/__footage/' + key + '.jpg')).blob(); return new File([b], name || key + '.jpg', { type: 'image/jpeg' }); },
+    // Wait until imported audio has its waveform.
+    async peaks() { for (let i = 0; i < 80 && !RS.state.project.clips.filter((c) => c.type === 'audio').every((c) => RS.runtime[c.mediaId] && RS.runtime[c.mediaId].peaks); i++) await new Promise((r) => setTimeout(r, 100)); },
+    name(n) { RS.state.project.name = n; RS.emit('project-change'); },
+    clean() { document.querySelectorAll('#toasts .toast').forEach((x) => x.remove()); },
+    // Effect Controls: collapse every section except those whose title contains one of `titles`; scroll to the first.
+    only(...titles) {
+      const secs = [...document.querySelectorAll('.ec-section')];
+      for (const s of secs) { const t = (s.querySelector('.ec-sec-head') || {}).textContent || ''; s.classList.toggle('collapsed', !titles.some((x) => t.includes(x))); }
+      const first = secs.find((s) => !s.classList.contains('collapsed'));
+      if (first) first.scrollIntoView({ block: 'start' });
+    },
+    wait: (ms) => new Promise((r) => setTimeout(r, ms)),
     // A music-like bed (chord with a slow pulse) as WAV.
     music({ name = 'music.wav', secs = 12, gain = 0.5 } = {}) {
       const sr = 48000, n = sr * secs, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
@@ -215,3 +262,4 @@ module.exports = {
     async setup() { RS.state.project.name = 'Untitled'; await RS.web.home(); },
   },
 };
+Object.assign(module.exports, require('./scenes-blog.js'));

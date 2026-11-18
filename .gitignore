@@ -8,3 +8,6 @@ dist/
 reel-smith-*.json
 *service-account*.json
 .wrangler/
+
+# CC0 photos for screenshots (node scripts/shots/get-footage.js)
+scripts/shots/footage/

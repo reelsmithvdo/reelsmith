@@ -51,6 +51,12 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   intro; GA event `search`). AdSense prep (see "Ads / AdSense" below). Admin dashboard Analytics: realtime visitors,
   deltas vs previous 30 days, daily chart, channels, sources, site-search terms. Blog posts 2026-11-14/15 published.
 
+- **2026-11-18: 15 more blog posts scheduled in the live D1** (every 2 days, 10:00 Asia/Dhaka, 2026-11-22 … 2026-12-20; scripts
+  `admin/scripts/content/post-2026-11-22-*.mjs` … `post-2026-12-20-*.mjs`). Featured images are real editor screenshots with
+  real CC0 photos as footage: `scripts/shots/footage.json` (Wikimedia Commons, licence-checked) → `node scripts/shots/get-footage.js`
+  (downloads to `scripts/shots/footage/`, gitignored) → `SH.photo()` in scenes; blog scenes in `scripts/shots/scenes-blog.js`;
+  the phone image = 3 phone screenshots combined by `scripts/shots/combine-phone.js`.
+
 ## Next steps (suggested, not started)
 - New posts: on hold by the owner's choice. When resumed: **3–4 strong posts a week**, not mass-produced
   (Google's scaled-content policy, AdSense "low value" rejections). Good topics = the tool pages' search intents.

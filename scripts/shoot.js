@@ -1,7 +1,8 @@
 // Real screenshots of the editor for the website (featured images, tutorials, the first-visit intro).
 // Run: npx electron scripts/shoot.js <scene> [<scene> …]   (or "all"); writes src/assets/shots/<scene>.jpg
 // Scenes are built with the same test media generator the test suite uses (tests/page-helpers.js),
-// so no personal files are needed.
+// so no personal files are needed. Real-looking footage: CC0 photos from scripts/shots/footage.json
+// (node scripts/shots/get-footage.js once), turned into slowly moving clips by SH.photo().
 'use strict';
 const { app, BrowserWindow } = require('electron');
 const http = require('http');
@@ -19,6 +20,7 @@ const serve = () => new Promise((resolve) => {
   const srv = http.createServer((req, res) => {
     let p = decodeURIComponent(req.url.split('?')[0]);
     if (p.startsWith('/__fixtures/')) p = path.join(ROOT, 'tests', 'fixtures', p.slice(12));
+    else if (p.startsWith('/__footage/')) p = path.join(__dirname, 'shots', 'footage', p.slice(11));
     else { if (p.endsWith('/')) p += 'index.html'; p = path.join(SRC, p); }
     fs.readFile(p, (e, d) => { if (e) { res.writeHead(404); res.end(); return; } res.writeHead(200, { 'content-type': MIME[path.extname(p)] || 'application/octet-stream' }); res.end(d); });
   }).listen(0, '127.0.0.1', () => resolve('http://127.0.0.1:' + srv.address().port + '/'));
@@ -55,7 +57,7 @@ async function shoot(base, name) {
   const dir = sc.preview ? (process.env.RS_SHOT_DIR || os.tmpdir()) : OUT;
   const file = path.join(dir, (sc.file || name) + '.jpg');
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(file, img.resize({ width: w }).toJPEG(84));
+  fs.writeFileSync(file, (sc.hires ? img : img.resize({ width: w })).toJPEG(sc.hires ? 90 : 84));
   console.log('wrote', file, (fs.statSync(file).size / 1024).toFixed(0) + ' KB');
   win.destroy();
 }
