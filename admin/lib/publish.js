@@ -10,6 +10,7 @@ import { getSettings, setSettings } from './db.js';
 import { effectiveStatus, allPosts, listCategories } from './posts.js';
 import { readMedia } from './media.js';
 import { submitSitemap } from './google.js';
+import { shareNewPosts } from './facebook.js';
 
 const ROOT = () => path.resolve(process.cwd(), '..');
 const SRC = () => path.resolve(process.cwd(), process.env.SITE_SRC || '../src');
@@ -110,5 +111,7 @@ export async function publishSite() {
   if (result.commit) $set.sitemapPending = new Date(); // a new commit → the live sitemap is about to change
   await setSettings($set);
   if (result.mode === 'github') { const s = await maybeSubmitSitemap(); if (s) result.sitemap = s.ok ? 'submitted to Google' : 'Google: ' + s.error; }
+  // Facebook: share posts that just went live (only online, and only once their page is live — usually the next hourly run).
+  if (result.mode === 'github') { try { const f = await shareNewPosts(); if (f) result.facebook = f; } catch (e) { result.facebook = { error: e.message }; } }
   return result;
 }

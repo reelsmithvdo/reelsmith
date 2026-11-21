@@ -33,33 +33,54 @@ Live at **https://reelsmithapp.com**. Built and credited by **Algo Matryx** (htt
 3. Later, maybe: more tutorials and languages (Photopea has 67 translated homepages, `/l/<lang>/` + hreflang).
    (Desktop installers are dropped.)
 
-## Status (last updated 2026-11-11) — read this to pick up where we left off
-Everything below is **live and pushed** (main = origin/main; last full `npm test`: 362 passed, 0 failed).
+## Status (last updated 2026-11-18) — read this to pick up where we left off
+Everything below is **live and pushed** (main = origin/main; last full `npm test` 2026-11-18: 376 passed, 0 failed).
 - **Website (94 URLs):** homepage = editor with a Photopea-style first-visit intro; `/features/`, `/tools/` (15 task
   pages), `/tutorials/` (6), `/blog/` (3), `/docs/` (60), `/contact/`, about/privacy/terms. Sitemap + robots
   (`Disallow: /api/`, `/admin`). Articles get heading anchors, "On this page", "Related guides", image sizes.
 - **Editor features added 2026-11-09/10:** Export as GIF, Export Audio (M4A/WAV), 9 creative effects (Kaleidoscope,
   Zoom Blur, Duotone Pop, Old Film, Strobe Flash, Spotlight, Snowfall, Sparkles, Rain), 6 project templates on the
   start screen, `/?tool=<id>` task guides, Shift-click range selection in the Project panel, Contact in Help menu.
-- **Blog admin** is live at reelsmithapp.com/admin (see below). 9 posts rewritten, SEO scores 88–96.
+- **Blog admin** is live at reelsmithapp.com/admin (see below). 13 posts live on 2026-11-18 (GIF post went live that day).
 - **Contact form** live: `/contact/` → `POST /api/contact` (worker) → Brevo → reelsmith.vdo@gmail.com (Reply-To =
   visitor). Owner added `BREVO_API_KEY` (API key, xkeysib-…) and verified sender "Reelsmith <reelsmith.vdo@gmail.com>".
   Not yet confirmed with a real message — ask the owner whether a test from the live form arrived.
 - **Search Console:** sitemap resubmitted 2026-11-09 (94 URLs); from now on the admin re-sends it automatically.
-- **2026-11-16 (local, not yet pushed when written):** site search like algomatryx.com (`src/search.js`, header button
+- **2026-11-16 (pushed):** site search like algomatryx.com (`src/search.js`, header button
   "Search ⌘K", also `/` and Ctrl+K; index `src/search-index.json` built by `npm run site`; on the editor page only in the
   intro; GA event `search`). AdSense prep (see "Ads / AdSense" below). Admin dashboard Analytics: realtime visitors,
   deltas vs previous 30 days, daily chart, channels, sources, site-search terms. Blog posts 2026-11-14/15 published.
 
-- **2026-11-18: 15 more blog posts scheduled in the live D1** (every 2 days, 10:00 Asia/Dhaka, 2026-11-22 … 2026-12-20; scripts
-  `admin/scripts/content/post-2026-11-22-*.mjs` … `post-2026-12-20-*.mjs`). Featured images are real editor screenshots with
-  real CC0 photos as footage: `scripts/shots/footage.json` (Wikimedia Commons, licence-checked) → `node scripts/shots/get-footage.js`
-  (downloads to `scripts/shots/footage/`, gitignored) → `SH.photo()` in scenes; blog scenes in `scripts/shots/scenes-blog.js`;
-  the phone image = 3 phone screenshots combined by `scripts/shots/combine-phone.js`.
+- **Blog schedule (in the live D1, publish automatically via the hourly cron at ~:17):** 2026-11-20 add music; then every
+  2 days at 10:00 Asia/Dhaka, 2026-11-22 … 2026-12-20: color correct, blur a face, speed ramp, voiceover, picture-in-picture,
+  transitions, background noise, multicam, logo/watermark, photo slideshow, split screen, freeze frame, video intro,
+  editing shortcuts, edit on phone; then (topics from Search Console queries, added 2026-11-21) 12-22 remove audio, 12-24 add
+  text without watermark, 12-26 combine videos into one Reel, 12-28 blurred background, 12-30 reverse a video. Scripts: `admin/scripts/content/post-<date>-*.mjs` (re-run with `--live` to update one).
+  No post links to a post that isn't live yet on its own date — keep it that way when editing.
+- **Facebook auto-share (built 2026-11-21, not pushed/active yet):** `admin/lib/facebook.js`, called at the end of every online
+  publish (scheduler now runs at :17 and :47). Shares each post that went live after sharing was switched on, once, to the
+  Facebook Page (title + excerpt + link; preview comes from the page's og: tags), only when the page answers 200 — so usually
+  ~30 min after it goes live. Max 2 per run, 3 tries on errors. State: D1 settings id 'facebook' {since, shared, last};
+  status in admin Settings ▸ Connections. Needs secrets FB_PAGE_ID + FB_PAGE_TOKEN (never-expiring Page token with
+  pages_manage_posts) on reelsmith-admin — the owner creates the Meta app and adds them.
+- **Post images are static files, not in D1:** featured/inline images of script-made posts are `src/assets/shots/<name>.jpg`
+  (committed; posts store only the path). They don't appear in the admin Media library. They must be pushed before
+  the post's publish date. Admin-uploaded images are different (D1 `media`, written to `src/assets/blog/` on publish).
+- **Screenshots with real footage (2026-11-18):** CC0/public-domain photos listed in `scripts/shots/footage.json`
+  (Wikimedia Commons, licence checked by `node scripts/shots/get-footage.js`, downloaded to `scripts/shots/footage/`,
+  gitignored) → `SH.photo({ key, … })` turns a photo into a slowly moving MP4 (optional speech audio). Blog scenes are in
+  `scripts/shots/scenes-blog.js` and `scenes-blog2.js` (`npx electron scripts/shoot.js <scene>`); the phone image = scenes phone-a/b/c
+  (`RS_SHOT_DIR=…`) combined by `npx electron scripts/shots/combine-phone.js`. Owner wants images that look real and differ
+  from each other — no drawn/cartoon footage, no AI-looking designs.
+- **Known app issues found 2026-11-18 (not fixed):** Export dialog overflows on phone width (Range select and Duration cut
+  off); Speed/Duration with "Ripple" and several selected clips on one track leaves gaps (selected clips aren't shifted).
 
 ## Next steps (suggested, not started)
-- New posts: on hold by the owner's choice. When resumed: **3–4 strong posts a week**, not mass-produced
-  (Google's scaled-content policy, AdSense "low value" rejections). Good topics = the tool pages' search intents.
+- New posts: scheduled until 2026-12-30 (see Status). Next batch after that: **3–4 strong posts a week**, not
+  mass-produced (Google's scaled-content policy, AdSense "low value" rejections). Topics already covered: see
+  `admin/scripts/content/` — avoid duplicates. Optionally check after each date that the post went live.
+- Search Console 2026-11-18: 86 of 97 sitemap URLs indexed; the rest "Discovered – not indexed" (normal for a new site).
+  Owner requests indexing by hand (~10/day).
 - Owner to do by hand: Search Console ▸ URL Inspection ▸ Request indexing for key pages (~10/day);
   `www` → root Redirect Rule in Cloudflare; confirm the contact form email arrives.
 - Later: Brevo domain authentication for reelsmithapp.com (better deliverability) → set `CONTACT_FROM` to
@@ -90,7 +111,7 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
 | Hosting | Cloudflare Workers: `reelsmith` (website: static `src/` + `worker/index.js` for `/api/feedback`, `/api/contact`, `/admin*` → `ADMIN` binding, hourly cron) and `reelsmith-admin` (blog admin). Every push to `main` deploys both (~1–2 min) |
 | Domain | reelsmithapp.com (Cloudflare Registrar). `www` → root redirect still to be set up (Rules ▸ Redirect from WWW to root) |
 | YouTube | https://www.youtube.com/@ReelSmithVdo (name "Reelsmith", banner/description/links set 2026-11-09) |
-| Facebook page | https://www.facebook.com/reelsmithvdo/ |
+| Facebook page | https://www.facebook.com/reelsmithvdo/ (new posts auto-shared once FB_PAGE_ID/FB_PAGE_TOKEN are set) |
 | Reddit | https://www.reddit.com/user/reelsmithvdo/ (the Chrome extension cannot open reddit.com — the owner edits it) |
 | Google Analytics 4 | Account "Reelsmith", property "reelsmithapp.com" (Bangladesh time, USD), web stream "Reelsmith website", **Measurement ID `G-9Y1ME99DZ9`** (Google tag GTM-N8M82SLF). Loaded by `src/consent.js` only after Analytics consent and only on reelsmithapp.com. Optional data sharing with Google turned off (only Technical support on). |
 | Bing Webmaster Tools | site added 2026-11-09 |
@@ -118,7 +139,8 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
 - `scripts/build-site.js` — builds `/features/`, `/tools/…`, `/docs/…`, `/tutorials/…`, `/blog/…`, `/contact/`,
   legal pages, `sitemap.xml`, `robots.txt` into `src/`, and fingerprints scripts (`?v=hash`).
 - `src/contact.js` — contact form script; `worker/index.js` `contact()` sends it with Brevo.
-- Images: editor screenshots in `src/assets/shots/` (made with `scripts/shoot.js`); images uploaded in the admin
+- Images: editor screenshots in `src/assets/shots/` (made with `scripts/shoot.js`, scenes in `scripts/shots/scenes.js` and
+  `scenes-blog.js`; real-photo footage via `scripts/shots/get-footage.js`); images uploaded in the admin
   are stored in D1 (`media` + `media_chunks`, compressed to WebP ≤ ~400 KB in the browser, 2 MB server cap) and written to
   `src/assets/blog/` on publish.
 - `tests/` — the test suite (see below).
@@ -150,7 +172,7 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   the next publish or the hourly cron; `settings.site.sitemapPending` / `lastSitemapSubmit`, shown in Settings).
 - The rebuild (Settings fallback button, or automatic) writes `content/posts.json` + images to `src/assets/blog/`, then runs
   `scripts/build-site.js` → static pages. Going live = commit + push. The Markdown files in content/blog and
-  content/tutorials are only the fallback / original import source (`npm run import-content`).
+  content/tutorials are only the fallback / original import source (the import script was removed 2026-11-16).
 - SEO panel: Yoast-style checks in `admin/lib/seo-analysis.js` (from the Algo Matryx admin), score in `lib/score.js`.
 - Google data: Search Console works; GA4 needs the Analytics **Data** API enabled + the service account as Viewer.
 - **Online hosting (free, Cloudflare — the equivalent of Algo Matryx on Vercel):** Worker `reelsmith-admin`
@@ -169,7 +191,8 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   (Issues on reelsmith-feedback) is on the website Worker. Test live with `-H 'Sec-Fetch-Mode: navigate'`.
 - **Local work uses a separate database:** the local D1 copy (`npm run dev`, scripts without `--live`). The live hourly
   publish reads the live D1, so local edits never go live by themselves. Scripts reach either database with
-  `admin/scripts/d1.mjs` (`useD1()`; `--live` = live D1 through `npx wrangler login`), then use the normal lib code —
+  `admin/scripts/d1.mjs` (`useD1()`; `--live` = live D1 — this machine is logged in with `npx wrangler login`, so Claude
+  can read/write the live D1 directly; no admin sign-in needed), then use the normal lib code —
   template: `admin/scripts/content/post-2026-11-15-long-video-into-shorts.mjs` (uploads an image + saves a post).
   MongoDB was fully copied to D1 on 2026-11-16 (script removed afterwards; it is in git history: migrate-mongo-to-d1.mjs).
 - Local Cloudflare test: `cd admin && npm run cf:build && npx wrangler dev` (secrets in `admin/.dev.vars`).

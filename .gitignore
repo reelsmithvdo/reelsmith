@@ -11,3 +11,6 @@ reel-smith-*.json
 
 # CC0 photos for screenshots (node scripts/shots/get-footage.js)
 scripts/shots/footage/
+
+# Local secrets scratch file (never commit)
+creds.txt

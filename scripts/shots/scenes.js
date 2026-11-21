@@ -263,3 +263,4 @@ module.exports = {
   },
 };
 Object.assign(module.exports, require('./scenes-blog.js'));
+Object.assign(module.exports, require('./scenes-blog2.js'));

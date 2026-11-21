@@ -4,12 +4,13 @@ import AccountForms from '@/components/AccountForms';
 import { requireUser } from '@/lib/auth';
 import { first, getSettings } from '@/lib/db';
 import { searchConsole, analytics, serviceAccountEmail } from '@/lib/google';
+import { facebookStatus } from '@/lib/facebook';
 
 export const metadata = { title: 'Settings' };
 const ok = (p) => p.then(() => ({ ok: true }), (e) => ({ ok: false, e: e.message }));
 export default async function Settings() {
   const user = await requireUser();
-  const [database, gsc, ga, site] = await Promise.all([ok(first('SELECT 1 AS ok')), ok(searchConsole()), ok(analytics()), getSettings()]);
+  const [database, gsc, ga, site, fbPage, fb] = await Promise.all([ok(first('SELECT 1 AS ok')), ok(searchConsole()), ok(analytics()), getSettings(), facebookStatus().then((r) => ({ ok: true, name: r.name }), (e) => ({ ok: false, e: e.message })), getSettings('facebook')]);
   const row = (label, s, extra) => <tr><td>{label}</td><td style={{ textAlign: 'left' }}>{s.ok ? <span className="badge b-published">Connected</span> : <span className="badge b-draft">Not connected</span>} {!s.ok && <span className="small muted">{String(s.e).split('.')[0]}</span>}{extra}</td></tr>;
   const lp = site && site.lastPublish;
   return <>
@@ -29,6 +30,7 @@ export default async function Settings() {
           {row('Database (Cloudflare D1)', database)}
           {row('Search Console', gsc)}
           {row('Google Analytics', ga)}
+          {row('Facebook Page', fbPage, <span className="small muted">{fbPage.ok ? ' ' + fbPage.name + ' · new posts are shared automatically' : ''}{fb && fb.last ? ` · last share ${new Date(fb.last.at).toLocaleString()}: ${fb.last.ok ? fb.last.key : 'failed — ' + fb.last.error}` : ''}</span>)}
           <tr><td>Google account</td><td style={{ textAlign: 'left' }} className="small">{serviceAccountEmail() || '—'}</td></tr>
           <tr><td>Admin login</td><td style={{ textAlign: 'left' }} className="small">{user.email}</td></tr>
         </tbody></table>

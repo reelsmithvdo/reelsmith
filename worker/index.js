@@ -128,7 +128,8 @@ export default {
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return toAdmin(request, env);
     return env.ASSETS.fetch(request);
   },
-  // Hourly: publish posts whose scheduled time has come (no commit when nothing changed).
+  // Twice an hour (:17, :47): publish posts whose scheduled time has come (no commit when nothing changed), then
+  // share newly live posts on Facebook once their page is up (admin/lib/facebook.js).
   async scheduled(event, env, ctx) {
     if (!env.ADMIN) return;
     ctx.waitUntil(env.ADMIN.fetch('https://reelsmithapp.com/admin/api/publish', { method: 'POST', headers: { [SCHEDULER]: '1' } })

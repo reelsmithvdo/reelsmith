@@ -26,7 +26,7 @@
   // Hourly scheduled publish (free Cron Trigger).
   // The blog admin Worker (admin/wrangler.jsonc), reached at /admin through this binding.
   "services": [{ "binding": "ADMIN", "service": "reelsmith-admin" }],
-  "triggers": { "crons": ["17 * * * *"] },
+  "triggers": { "crons": ["17,47 * * * *"] },
   // Rebuild the static pages from content/posts.json (written by the admin's Publish site) on every deploy.
   "build": { "command": "node scripts/build-site.js" },
   "observability": { "enabled": true }
