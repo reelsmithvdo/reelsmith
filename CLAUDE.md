@@ -68,6 +68,10 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   rule: **at the start of every work session, run `cd admin && node --env-file=.env.local scripts/facebook.mjs --live`**
   and publish anything MISSED with `--share-missed` (or `--share blog/<slug>`; needs FB_PAGE_ID/FB_PAGE_TOKEN in the
   environment — ask the owner for them, e.g. in the gitignored creds.txt). Missed posts are also shown in Settings.
+  Older (already live) posts can instead be scheduled in Facebook's own **Scheduled** tab (owner's wish, 2026-11-21:
+  the 13 posts live before then were scheduled 22–30 Nov, 10:30/16:30 Dhaka) with `--schedule-backlog` (`--dry-run` first).
+  New posts can't be scheduled on Facebook in advance (Facebook builds the link preview when the post is created, and the
+  page doesn't exist yet) — they're shared directly ~10:47 on their day.
 - **Post images are static files, not in D1:** featured/inline images of script-made posts are `src/assets/shots/<name>.jpg`
   (committed; posts store only the path). They don't appear in the admin Media library. They must be pushed before
   the post's publish date. Admin-uploaded images are different (D1 `media`, written to `src/assets/blog/` on publish).

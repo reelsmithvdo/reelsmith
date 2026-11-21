@@ -72,22 +72,25 @@ export async function missedShares(now = Date.now(), fb = {}) {
   }).filter(Boolean);
 }
 
-// Share one post now (also used by scripts/facebook.mjs --share). Records the result and logs it.
-export async function shareOne(p, { now = Date.now(), fb = null, manual = false } = {}) {
+// Share one post now — or, with `at` (a time 10 min … 75 days ahead), schedule it on Facebook so it shows in the Page's
+// Scheduled tab (used by scripts/facebook.mjs --schedule-backlog; only for posts whose page is already live, because
+// Facebook builds the link preview when the post is created). Records the result and logs it.
+export async function shareOne(p, { now = Date.now(), fb = null, manual = false, at = null } = {}) {
   fb = fb || (await getSettings('facebook')) || {};
   const shared = fb.shared || {}, key = keyOf(p), url = postUrl(p);
   let out;
   try {
-    const r = await graph(`/${process.env.FB_PAGE_ID}/feed`, { message: postMessage(p), link: url }, 'POST');
-    shared[key] = { id: r.id, at: new Date(now).toISOString() };
+    const extra = at ? { published: 'false', scheduled_publish_time: String(Math.floor(new Date(at).getTime() / 1000)) } : {};
+    const r = await graph(`/${process.env.FB_PAGE_ID}/feed`, { message: postMessage(p), link: url, ...extra }, 'POST');
+    shared[key] = at ? { id: r.id, at: new Date(at).toISOString(), scheduled: true } : { id: r.id, at: new Date(now).toISOString() };
     out = { key, id: r.id };
   } catch (e) {
     const tries = ((shared[key] && shared[key].tries) || 0) + 1;
     shared[key] = { tries, error: e.message, at: new Date(now).toISOString() };
     out = { key, error: e.message, gaveUp: tries >= MAX_TRIES };
   }
-  const event = out.id ? (manual ? 'shared by hand' : 'shared') : out.gaveUp ? 'MISSED (gave up)' : 'error';
-  await setSettings({ shared, since: undefined, startedAt: fb.startedAt || new Date(now).toISOString(), log: addLog(fb, now, key, event, out.id || out.error), last: { at: new Date(now).toISOString(), ok: !!out.id, key, error: out.error || '' } }, 'facebook');
+  const event = out.id ? (at ? 'scheduled on FB' : manual ? 'shared by hand' : 'shared') : out.gaveUp ? 'MISSED (gave up)' : 'error';
+  await setSettings({ shared, since: undefined, startedAt: fb.startedAt || new Date(now).toISOString(), log: addLog(fb, now, key, event, (out.id ? out.id + (at ? ' for ' + new Date(at).toISOString() : '') : out.error)), last: { at: new Date(now).toISOString(), ok: !!out.id, key, error: out.error || '' } }, 'facebook');
   return out;
 }
 
@@ -97,8 +100,9 @@ export async function shareNewPosts({ now = Date.now() } = {}) {
   if (!fb.startedAt) { fb.startedAt = new Date(now).toISOString(); await setSettings({ startedAt: fb.startedAt, log: addLog(fb, now, '-', 'sharing started') }, 'facebook'); }
   const shared = fb.shared || {};
   const done = Object.values(shared).filter((s) => s.id).map((s) => new Date(s.at).getTime());
-  const today = done.filter((t) => day(t) === day(now)).length;
-  const lastAt = done.length ? Math.max(...done) : 0;
+  const today = done.filter((t) => day(t) === day(now)).length; // includes posts scheduled on Facebook for today
+  // The 6-hour gap counts only posts already shared from here (posts scheduled on Facebook have their own slots).
+  const lastAt = Math.max(0, ...Object.values(shared).filter((s) => s.id && !s.scheduled).map((s) => new Date(s.at).getTime()));
   if (hour(now) < HOURS[0] || hour(now) >= HOURS[1]) return { wait: 'outside 10:00–22:00 Dhaka' };
   if (today >= PER_DAY) return { wait: `already ${PER_DAY} shares today` };
   if (now - lastAt < GAP) return { wait: 'less than 6 hours since the last share' };
