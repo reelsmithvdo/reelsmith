@@ -57,12 +57,17 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   editing shortcuts, edit on phone; then (topics from Search Console queries, added 2026-11-21) 12-22 remove audio, 12-24 add
   text without watermark, 12-26 combine videos into one Reel, 12-28 blurred background, 12-30 reverse a video. Scripts: `admin/scripts/content/post-<date>-*.mjs` (re-run with `--live` to update one).
   No post links to a post that isn't live yet on its own date — keep it that way when editing.
-- **Facebook auto-share (built 2026-11-21, not pushed/active yet):** `admin/lib/facebook.js`, called at the end of every online
-  publish (scheduler now runs at :17 and :47). Shares each post that went live after sharing was switched on, once, to the
-  Facebook Page (title + excerpt + link; preview comes from the page's og: tags), only when the page answers 200 — so usually
-  ~30 min after it goes live. Max 2 per run, 3 tries on errors. State: D1 settings id 'facebook' {since, shared, last};
-  status in admin Settings ▸ Connections. Needs secrets FB_PAGE_ID + FB_PAGE_TOKEN (never-expiring Page token with
-  pages_manage_posts) on reelsmith-admin — the owner creates the Meta app and adds them.
+- **Facebook auto-share (live 2026-11-21):** `admin/lib/facebook.js`, called at the end of every online publish (scheduler
+  at :17 and :47). Shares **every** live post once to the Facebook Page "Reelsmith" (id 1333250273214703; Meta app
+  "Reelsmith Auto Post" 1189536450129110, Live): **max 2 per day, ≥ 6 h apart, 10:00–22:00 Dhaka** — owner's rule, so it
+  never looks like spam. Order: posts live < 2 days first (shared ~10:47 on their day), then older posts oldest-first.
+  Text = title + meta description; link → Facebook builds the preview (featured image) from the page's og: tags. Only
+  when the page answers 200; 3 tries on errors. State: D1 settings id 'facebook' {shared, last}; Settings ▸ Connections
+  shows status + queue length. Secrets FB_PAGE_ID + FB_PAGE_TOKEN (never-expiring Page token) on reelsmith-admin.
+  **Missed shares are logged** (settings 'facebook'.log; failed 3× or not shared within a day of going live). The owner's
+  rule: **at the start of every work session, run `cd admin && node --env-file=.env.local scripts/facebook.mjs --live`**
+  and publish anything MISSED with `--share-missed` (or `--share blog/<slug>`; needs FB_PAGE_ID/FB_PAGE_TOKEN in the
+  environment — ask the owner for them, e.g. in the gitignored creds.txt). Missed posts are also shown in Settings.
 - **Post images are static files, not in D1:** featured/inline images of script-made posts are `src/assets/shots/<name>.jpg`
   (committed; posts store only the path). They don't appear in the admin Media library. They must be pushed before
   the post's publish date. Admin-uploaded images are different (D1 `media`, written to `src/assets/blog/` on publish).
@@ -76,6 +81,7 @@ Everything below is **live and pushed** (main = origin/main; last full `npm test
   off); Speed/Duration with "Ripple" and several selected clips on one track leaves gaps (selected clips aren't shifted).
 
 ## Next steps (suggested, not started)
+- **First, every session:** check Facebook missed shares (see Status ▸ Facebook auto-share) and publish them.
 - New posts: scheduled until 2026-12-30 (see Status). Next batch after that: **3–4 strong posts a week**, not
   mass-produced (Google's scaled-content policy, AdSense "low value" rejections). Topics already covered: see
   `admin/scripts/content/` — avoid duplicates. Optionally check after each date that the post went live.
